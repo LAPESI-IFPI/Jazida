@@ -175,7 +175,7 @@ public class ListsManager {
 						boolean nodeResponding = false;
 						NodeStatus nodeResponder = null;
 						
-						Thread.sleep(2000);
+						Thread.sleep(3000);
 						for (NodeStatus hostName : listNodes) {
 							path = ZkConf.DATANODES_PATH + "/" + hostName.getHostname();
 							byte[] bytes = zooKeeper.getData(path,	true, null);

@@ -21,11 +21,10 @@ public class ListsManager {
 	private static List<NodeStatus> nodesConnected = new ArrayList<NodeStatus>();
 	private static List<String> nodesDesconnected = new ArrayList<String>();
 	private static List<String> nodesHistoric = new ArrayList<String>();
-	private static Map<String, String> historic = new HashMap<String, String>();
+	private static Map<Integer, String> historic = new HashMap<Integer, String>();
 	private static List<NodeStatus> nodesReplySend = new ArrayList<NodeStatus>();
 	private static Map<Integer, NodeStatus> mapReplyUtil = new HashMap<Integer, NodeStatus>();
 	private static List<String> nodesReplyReceive = new ArrayList<String>();
-	//private static Map<Integer, String> mapReplyReceiveUtil = new HashMap<Integer, String>();
 	private static Map<String, String> managerNodesResponding = new HashMap<String, String>();
 	private static int idLastNode = 0;
 	private static int replyFrequency;
@@ -42,30 +41,8 @@ public class ListsManager {
 	public synchronized static void loadNodesReplySend() {
 		int idFirstNode = 01;
 
-		if(nodesConnected.isEmpty())
-			loadRoundRobinPartitionPolicy();
-		
-		if(nodesConnected.size() <= REPLY_FREQUENCY){
-			replyFrequency = (nodesConnected.size() - 1);
-		} else {
-			replyFrequency = REPLY_FREQUENCY;
-		}
-		
-		if(!mapReplyUtil.isEmpty())
-			mapReplyUtil.clear();
-		
 		if(!nodesReplySend.isEmpty())
 			nodesReplySend.clear();
-		
-		for(NodeStatus node: nodesConnected){
-			if(!node.getHostname().equals(HOSTNAME)){
-				int id = getIdDatanode(node.getHostname());			
-				mapReplyUtil.put(id, node);
-				if(id > idLastNode){
-					idLastNode = id;
-				}
-			}
-		}
 		
 		int idNode = getIdDatanode(HOSTNAME);
 		for(int i=0; i < replyFrequency; i++){
@@ -85,25 +62,9 @@ public class ListsManager {
 		}		
 	}
 	
-	//Analisar, acho que deve ser de quem esta conectado.
 	public synchronized static void loadNodesReplyReceive() {
-		
-//		nodesHistoric = ClusterService.getHistoricDataNodes();
-//	
-//		if(!nodesReplyReceive.isEmpty())
-//			nodesReplyReceive.clear();
-//		
-//		for(String hostName: nodesHistoric){
-//			if(!mapReplyReceiveUtil.containsValue(hostName)){
-//				if(!hostName.equals(HOSTNAME)){
-//					int id = getIdDatanode(hostName);			
-//					mapReplyReceiveUtil.put(id, hostName);
-//					if(id > idLastNode){
-//						idLastNode = id;
-//					}
-//				}
-//			}
-//		}
+		if(!nodesReplyReceive.isEmpty())
+			nodesReplyReceive.clear();
 		
 		int idNode = getIdDatanode(HOSTNAME);
 		for(int i=0; i < replyFrequency; i++){
@@ -121,13 +82,37 @@ public class ListsManager {
 		}		
 	}
 	
-	public static void manager(){
-		loadRoundRobinPartitionPolicy();
-		loadNodesReplySend();
-		loadNodesReplyReceive();
+	private static void loadData() {
+		if(nodesConnected.isEmpty())
+			loadRoundRobinPartitionPolicy();
+		
+		if(nodesConnected.size() <= REPLY_FREQUENCY){
+			replyFrequency = (nodesConnected.size() - 1);
+		} else {
+			replyFrequency = REPLY_FREQUENCY;
+		}
+		
+		if(!mapReplyUtil.isEmpty())
+			mapReplyUtil.clear();
+		
+		for(NodeStatus node: nodesConnected){
+			if(!node.getHostname().equals(HOSTNAME)){
+				int id = getIdDatanode(node.getHostname());			
+				mapReplyUtil.put(id, node);
+				if(id > idLastNode){
+					idLastNode = id;
+				}
+			}
+		}
 	}
 	
-	//coorrendo risco de sair
+	public static void manager(){
+		loadRoundRobinPartitionPolicy();
+		loadData();
+		loadNodesReplySend();
+	}
+	
+
 //	public static void loadNodesDisconneted() {
 //		boolean exists = false;
 //		for(String hostName: nodesReplyReceive){
@@ -164,20 +149,20 @@ public class ListsManager {
 						if(managerNodesResponding.containsKey(hostNameDesc)){
 							hostRenponder = managerNodesResponding.get(hostNameDesc);
 						}
-						path = ZkConf.DATANODES_PATH + node.getHostname();
+						path = ZkConf.DATANODES_PATH + "/" + node.getHostname();
 						node.setTwoResponding(true);
 						node.setHostNameResponding(hostRenponder);
 						zooKeeper.setData(path, Serializer.fromObject(node), -1);
 					
 					} else {
-						List<NodeStatus> listNodes = getListNodeSendReply(hostNameDesc);
+						List<String> listNodes = getListNodeSendReply(hostNameDesc);
 						List<NodeStatus> nodes = new ArrayList<NodeStatus>();
 						boolean nodeResponding = false;
 						NodeStatus nodeResponder = null;
 						
-						Thread.sleep(3000);
-						for (NodeStatus hostName : listNodes) {
-							path = ZkConf.DATANODES_PATH + "/" + hostName.getHostname();
+						Thread.sleep(2500);
+						for (String hostName : listNodes) {
+							path = ZkConf.DATANODES_PATH + "/" + hostName;
 							byte[] bytes = zooKeeper.getData(path,	true, null);
 							if(bytes != null){
 								NodeStatus datanode = (NodeStatus) Serializer.toObject(bytes);
@@ -208,7 +193,7 @@ public class ListsManager {
 						}
 						
 						if((nodeResponding == false) && 
-								(nodeResponder.getHostname().equals(node.getHostname()))){		
+								(nodeResponder.getHostname().equals(node.getHostname()))){
 							path = ZkConf.DATANODES_PATH + "/" + node.getHostname();
 							node.setTwoResponding(true);
 							node.setHostNameResponding(hostNameDesc);
@@ -280,9 +265,9 @@ public class ListsManager {
 	public static void loadMemoryHistoricNodes() {
 		nodesHistoric = ClusterService.getHistoricDataNodes();
 		for(String hostName: nodesHistoric){
-			String path = ZkConf.DATANODES_PATH + "/" + hostName;
-			if(historic.containsKey(path))
-				historic.put(path, hostName);
+			int id = getIdDatanode(hostName);
+			if(!historic.containsKey(id))
+				historic.put(id, hostName);
 		}
 	}
 	
@@ -300,10 +285,6 @@ public class ListsManager {
 		return nodesReplySend;
 	}
 	
-	public static Map<String, String> getHistoric() {
-		return historic;
-	}
-
 	public static NodeStatus nextNode() {
 		return partitionPolicy.nextNode();
 	}
@@ -317,20 +298,26 @@ public class ListsManager {
 		return id;
 	}
 	
-	private static List<NodeStatus> getListNodeSendReply(String hostName){
-		List<NodeStatus> nodes = new ArrayList<NodeStatus>();
+	private static List<String> getListNodeSendReply(String hostName){
+		List<String> nodes = new ArrayList<String>();
 		int idFirstNode = 1;		
+		int replyFrequency;
+		if(nodesConnected.size() == 3){
+			replyFrequency = 2;
+		} else {
+			replyFrequency = 2;
+		}
 		
 		int idNode = getIdDatanode(hostName);
 		for(int i=0; i < replyFrequency; i++){
-			NodeStatus node = null;
+			String node = null;
 			while(node == null){
 				idNode++;
 				if(idNode > idLastNode)
 					idNode = idFirstNode;
 					
-				node = mapReplyUtil.get(idNode);
-					
+				node = historic.get(idNode);
+				
 				if(node != null ) 
 					nodes.add(node);
 			}

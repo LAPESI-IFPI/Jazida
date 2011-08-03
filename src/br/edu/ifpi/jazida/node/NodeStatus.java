@@ -33,7 +33,8 @@ public class NodeStatus implements Serializable {
 	public NodeStatus(String hostname, String address, int textIndexerServerPort, int textSearchServerPort, int imageIndexerServerPort, int imageSearcherServerPort, int textReplicationServerPort, int imageReplicationServerPort, int textReplicationSupportServerPort, int imageReplicationSupportServerPort) {
 		this.hostname = hostname;
 		this.address = address;
-		this.twoResponding = false;
+		twoResponding = false;
+		hostNameResponding = "";
 		this.textIndexerServerPort = textIndexerServerPort;
 		this.textSearchServerPort = textSearchServerPort;
 		this.imageIndexerServerPort = imageIndexerServerPort;

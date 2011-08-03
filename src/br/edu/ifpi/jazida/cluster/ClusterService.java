@@ -3,7 +3,6 @@ package br.edu.ifpi.jazida.cluster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.log4j.Logger;
@@ -108,6 +107,7 @@ public class ClusterService implements Watcher, VoidCallback {
 				registerOnClusterService(node.getHostname(), node);
 				ListsManager.manager();
 				registerHistoricClusterService(node.getHostname());
+				ListsManager.loadNodesReplyReceive();
 				ListsManager.loadMemoryHistoricNodes();
 			// passou para o manage	ListsManager.loadNodesReceiveReply();
 				// talvez nao precise  ListsManager.loadNodesDisconneted();
@@ -149,12 +149,13 @@ public class ClusterService implements Watcher, VoidCallback {
 	@Override
 	public void processResult(int rc, String path, Object ctx) {
 		try {
-			Map<String, String> historic = ListsManager.getHistoric();
+			int begin = path.lastIndexOf("/");
+			int end = path.length();
 			
 			if(path.equals(ZkConf.HISTORIC_PATH)){
-				ListsManager.loadMemoryHistoricNodes();			
+				ListsManager.loadMemoryHistoricNodes();	
 			} else {
-				String hostName = historic.get(path);
+				String hostName = path.substring(begin + 1, end);
 				if((zk.exists(path, true) == null)) {
 					LOG.info("Datanode que se desconectou: " + hostName);
 					ListsManager.managerNodesDeleted(hostName, node, zk);

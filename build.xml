@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="Jazida" basedir="." default="build">
+
+	<!-- Propriedades globais do build -->
+	<property name="version" value="0.1" />
+	
+	<property name="dir.base" value="." />
+	<property name="dir.src" value="${dir.base}/src" />
+	<property name="dir.src.class" value="${dir.base}/build" />
+	<property name="dir.test" value="${dir.base}/test" />
+	<property name="dir.test.class" value="${dir.base}/build" />
+	<property name="dir.lib" value="${dir.base}/lib" />
+	<property name="dir.docs" value="${dir.base}/docs" />
+	<property name="dir.conf" value="${dir.base}/conf" />
+	<property name="dir.dist" value="${dir.base}/dist" />
+	<property name="dir.bin" value="${dir.base}/bin" />
+
+	<property name="jar.name" value="jazida-${version}.jar" />
+	<property name="zip.name" value="jazida-${version}.zip" />
+	<property name="tar.name" value="jazida-${version}.tar" />
+
+	<!-- Classpath's do Projeto -->
+	<path id="classpath.base">
+		<pathelement location="${dir.src}" />
+		<pathelement location="${dir.src.class}" />
+		<fileset dir="${dir.lib}">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<path id="classpath.test">
+		<pathelement location="${dir.test}" />
+		<pathelement location="${dir.test.class}" />
+		<path refid="classpath.base" />
+	</path>
+
+
+	<!-- Compila o código-fonte -->
+	<target name="compile" description="Compila o codigo-fonte do projeto">
+		<echo>Compilando código-fonte...</echo>
+		<mkdir dir="${dir.src.class}" />
+		<javac srcdir="${dir.src}" destdir="${dir.src.class}">
+			<classpath refid="classpath.base" />
+		</javac>
+	</target>
+
+	<!-- Compila os testes -->
+	<target name="compile-test">
+		<echo>Compilando testes...</echo>
+		<mkdir dir="${dir.test.class}" />
+		<javac srcdir="${dir.test}" destdir="${dir.test.class}">
+			<classpath refid="classpath.test" />
+		</javac>
+	</target>
+
+	<!-- Cria o arquivo .jar do Jazida -->
+	<target name="create-jar" depends="compile" description="Cria o arquivo .jar contendo os arquivos .classe e .java">
+		<echo>Iniciando criação do jar</echo>
+		<mkdir dir="${dir.dist}" />
+		<jar destfile="${dir.dist}/${jar.name}" compress="true">
+			<fileset dir="${dir.src}">
+				<include name="**/*.java" />
+			</fileset>
+			<fileset dir="${dir.src.class}">
+				<include name="**/*.jar" />
+				<include name="**/*.class" />
+			</fileset>
+		</jar>
+		<echo>Arquivo ${dir.bin}/${jar.name} criado com sucesso.</echo>
+	</target>
+
+	<!-- Executa os testes do Jazida -->
+	<target name="test" depends="compile, compile-test">
+		<echo>Executando suite de testes do Jazida...</echo>
+		<junit haltonfailure="false" haltonerror="false" showoutput="no" fork="true" dir="${dir.base}">
+			<classpath refid="classpath.test" />
+			<formatter type="brief" usefile="false" />
+			<test name="br.edu.ifpi.jazida.suite.JazidaSuiteTest" />
+		</junit>
+	</target>
+
+	<!-- Gera a documentação Javadoc do Jazida -->
+	<target name="javadoc">
+		<javadoc sourcepath="${dir.src}" destdir="${dir.docs}" encoding="utf-8" doctitle="Jazida API - Laboratório de Pesquisa em Sistemas de Informação">
+			<classpath refid="classpath.base" />
+		</javadoc>
+	</target>
+	
+	<!-- Cria pasta de distribuição do projeto -->
+	<target name="create-dist">
+		<delete dir="${dir.dist}"></delete>
+		<mkdir dir="${dir.base}/dist"/>
+		<copy todir="${dir.dist}/conf" >
+			<fileset dir="${dir.conf}" />
+		</copy>
+		<copy file="${dir.base}/opala.conf" tofile="${dir.dist}/opala.conf" />
+		<copy todir="${dir.dist}/lib" >
+			<fileset dir="${dir.lib}">
+				<exclude name="test"/>
+				<exclude name="test/**"/>
+			</fileset>
+		</copy>
+
+		<copy todir="${dir.dist}/sample-data" >
+			<fileset dir="${dir.base}/sample-data">
+				<exclude name="wikipedia.lines.*"/>
+			</fileset>
+		</copy>
+
+		<antcall target="create-jar" />
+		<antcall target="javadoc" />
+		<copy todir="${dir.dist}/docs" >
+			<fileset dir="${dir.docs}" />
+		</copy>
+		<copy todir="${dir.dist}" >
+			<fileset dir="${dir.bin}" />
+		</copy>
+		<zip destfile="${dir.dist}/${zip.name}" encoding="UTF-8"> 
+		  <fileset dir="${dir.dist}"> 
+		    <include name="**/*" />  
+		  </fileset> 
+		</zip>
+		<tar destfile="${dir.dist}/${tar.name}" longfile="gnu">
+			<tarfileset dir="${dir.dist}" filemode="755">
+				<include name="jazida" />
+				<include name="jazidaclient" />
+				<include name="load-test" />
+			</tarfileset>
+			<tarfileset dir="${dir.dist}">
+				<include name="**/*" />
+				<exclude name="jazida" />
+				<exclude name="jazidaclient" />
+				<exclude name="load-test" />
+				<exclude name="${zip.name}"/>
+			</tarfileset>
+		</tar>
+	</target>
+	
+	<!-- Executa testes, cria o arquivo jar, gera javadoc e cria arquivo de distribuição do Jazida -->
+	<target name="build">
+		<antcall target="test" />
+		<antcall target="create-dist" />
+		<antcall target="create-jar" />
+		<antcall target="javadoc" />
+		<echo>Build finalizado.</echo>
+	</target>
+</project>

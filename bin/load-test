@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+# if no args specified, show usage
+usage="Formas de uso: load-test ( startServer | run ) "
+if [ $# -le 0 ]; then
+  echo $usage
+  exit 1
+fi
+
+# set the classpath
+export CLASSPATH=./*;
+export CLASSPATH=$CLASSPATH:./lib/*;
+
+if [ $1 = "startServer" ]; then
+  exec java -classpath $CLASSPATH br.edu.ifpi.jazida.loadtest.LoadTestServer $2 $3
+  exit 1
+fi
+if [ $1 = "run" ]; then
+  exec java -classpath $CLASSPATH br.edu.ifpi.jazida.loadtest.LoadTestStarter $2 $3 $4 $5
+  exit 1
+fi
+
+echo "Nenhum comando executado."

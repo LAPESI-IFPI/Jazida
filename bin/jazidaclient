@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+# set the classpath
+export CLASSPATH=./*;
+export CLASSPATH=$CLASSPATH:./lib/*;
+
+exec -a JazidaClient java -classpath $CLASSPATH br.edu.ifpi.jazida.JazidaClient $1 $2

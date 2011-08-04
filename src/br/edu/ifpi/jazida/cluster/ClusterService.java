@@ -106,11 +106,9 @@ public class ClusterService implements Watcher, VoidCallback {
 			case SyncConnected:
 				registerOnClusterService(node.getHostname(), node);
 				ListsManager.manager();
-				registerHistoricClusterService(node.getHostname());
-				ListsManager.loadNodesReplyReceive();
-				ListsManager.loadMemoryHistoricNodes();
-			// passou para o manage	ListsManager.loadNodesReceiveReply();
-				// talvez nao precise  ListsManager.loadNodesDisconneted();
+				//registerHistoricClusterService(node.getHostname());
+				//ListsManager.loadNodesReplyReceive();
+				//ListsManager.loadMemoryHistoricNodes();
 				connectedSignal.countDown();				
 				break;
 
@@ -152,9 +150,9 @@ public class ClusterService implements Watcher, VoidCallback {
 			int begin = path.lastIndexOf("/");
 			int end = path.length();
 			
-			if(path.equals(ZkConf.HISTORIC_PATH)){
-				ListsManager.loadMemoryHistoricNodes();	
-			} else {
+//			if(path.equals(ZkConf.HISTORIC_PATH)){
+//				ListsManager.loadMemoryHistoricNodes();	
+//			} else {
 				String hostName = path.substring(begin + 1, end);
 				if((zk.exists(path, true) == null)) {
 					LOG.info("Datanode que se desconectou: " + hostName);
@@ -163,7 +161,7 @@ public class ClusterService implements Watcher, VoidCallback {
 					LOG.info("Datanode que se conectou: " + hostName);
 					ListsManager.managerNodesConnected(hostName, node, zk);
 				}
-			}
+			//}
 				
 		} catch (KeeperException e) {
 			LOG.error(e);

@@ -9,7 +9,7 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.MultiSearcher;
+import org.apache.lucene.search.ParallelMultiSearcher;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopFieldDocs;
 import org.apache.lucene.store.Directory;
@@ -35,7 +35,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 	private static final Logger LOG = Logger.getLogger(TextSearchableProtocol.class);
 	private IndexManager indexManager;
 	private IndexSearcher[] searchers = new IndexSearcher[2];
-	private MultiSearcher multiSearcher;
+	private ParallelMultiSearcher multiSearcher;
 	private NodeStatus node;
 
 	public TextSearchableProtocol(IndexManager manager, NodeStatus node) {
@@ -314,7 +314,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 		try {
 			searchers[0] = new IndexSearcher(indexManager.getDirectory());
 			searchers[1] = new IndexSearcher(getDiretory(node.getHostNameResponding()));
-			multiSearcher = new MultiSearcher(searchers);
+			multiSearcher = new ParallelMultiSearcher(searchers);
 		} catch (CorruptIndexException e) {
 			e.printStackTrace();
 		} catch (IOException e) {

@@ -14,7 +14,7 @@ import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.MultiSearcher;
+import org.apache.lucene.search.ParallelMultiSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
@@ -35,7 +35,7 @@ public class NodeTwoResponderTest {
 	private static File fileReply = new File(PathJazida.TEXT_INDEX_REPLY.getValue());
 	private static final Analyzer ANALYZER = new BrazilianAnalyzer(Version.LUCENE_30);
 	private static IndexSearcher[] searchers = new IndexSearcher[2];
-	private static MultiSearcher multiSearcher;
+	private static ParallelMultiSearcher multiSearcher;
 	private static IndexWriter writerIndex, writerReply;
 	private static Directory dirReply, dirIndex;
 	private static MetaDocument docIndex = new MetaDocument();
@@ -52,7 +52,7 @@ public class NodeTwoResponderTest {
 		
 		searchers[0] = new IndexSearcher(dirIndex);
 		searchers[1] = new IndexSearcher(dirReply);
-		multiSearcher = new MultiSearcher(searchers);
+		multiSearcher = new ParallelMultiSearcher(searchers);
 	}
 	
 	@Test

@@ -1,8 +1,6 @@
 package br.edu.ifpi.jazida.cluster;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.log4j.Logger;
@@ -14,7 +12,6 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 
-import br.edu.ifpi.jazida.node.DataNode;
 import br.edu.ifpi.jazida.node.NodeStatus;
 import br.edu.ifpi.jazida.util.ListsManager;
 import br.edu.ifpi.jazida.util.Serializer;
@@ -42,6 +39,7 @@ public class ClusterService implements Watcher, VoidCallback {
 	private void startZookeeper() {
 		try {
 			zk = new ZooKeeper(ZkConf.ZOOKEEPER_SERVERS, ZkConf.ZOOKEEPER_TIMEOUT, this);
+			ListsManager.setZk(zk);
 			connectedSignal.await();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -77,24 +75,24 @@ public class ClusterService implements Watcher, VoidCallback {
 		}
 	}
 	
-	private void registerHistoricClusterService(String hostName) {
-		try {
-			
-			if (zk.exists(ZkConf.HISTORIC_PATH, false) == null) {
-				zk.create(ZkConf.HISTORIC_PATH, null, Ids.OPEN_ACL_UNSAFE,
-						CreateMode.PERSISTENT);
-			}
-			String pathHistoric = ZkConf.HISTORIC_PATH + "/" + hostName;
-			if((zk.exists(pathHistoric, false) == null)) {
-				zk.create(pathHistoric, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-			}
-			
-		} catch (KeeperException e) {
-			LOG.error(e);
-		} catch (InterruptedException e) {
-			LOG.error(e);
-		}
-	}
+//	private void registerHistoricClusterService(String hostName) {
+//		try {
+//			
+//			if (zk.exists(ZkConf.HISTORIC_PATH, false) == null) {
+//				zk.create(ZkConf.HISTORIC_PATH, null, Ids.OPEN_ACL_UNSAFE,
+//						CreateMode.PERSISTENT);
+//			}
+//			String pathHistoric = ZkConf.HISTORIC_PATH + "/" + hostName;
+//			if((zk.exists(pathHistoric, false) == null)) {
+//				zk.create(pathHistoric, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+//			}
+//			
+//		} catch (KeeperException e) {
+//			LOG.error(e);
+//		} catch (InterruptedException e) {
+//			LOG.error(e);
+//		}
+//	}
 	
 
 	@Override
@@ -134,7 +132,7 @@ public class ClusterService implements Watcher, VoidCallback {
 				break;
 			
 			case NodeDataChanged:
-				ListsManager.managerNodesChanged(path, zk);
+				ListsManager.managerNodesChanged(path);
 				break;
 				
 			case NodeChildrenChanged:
@@ -149,18 +147,18 @@ public class ClusterService implements Watcher, VoidCallback {
 		try {
 			int begin = path.lastIndexOf("/");
 			int end = path.length();
+			String hostName = path.substring(begin + 1, end);
 			
 //			if(path.equals(ZkConf.HISTORIC_PATH)){
 //				ListsManager.loadMemoryHistoricNodes();	
 //			} else {
-				String hostName = path.substring(begin + 1, end);
-				if((zk.exists(path, true) == null)) {
-					LOG.info("Datanode que se desconectou: " + hostName);
-					ListsManager.managerNodesDeleted(hostName, node, zk);
-				} else {
-					LOG.info("Datanode que se conectou: " + hostName);
-					ListsManager.managerNodesConnected(hostName, node, zk);
-				}
+			if((zk.exists(path, true) == null)) {
+				LOG.info("Datanode que se desconectou: " + hostName);
+				ListsManager.managerNodesDeleted(hostName, node);
+			} else {
+				LOG.info("Datanode que se conectou: " + hostName);
+				ListsManager.managerNodesConnected(hostName, node);
+			}
 			//}
 				
 		} catch (KeeperException e) {
@@ -170,57 +168,25 @@ public class ClusterService implements Watcher, VoidCallback {
 		}
 	}
 	
-	/**
-	 * Lista os {@link DataNode}s conectados no momento ao ClusterService.
-	 * 
-	 * @return datanodes
-	 * @throws KeeperException
-	 * @throws InterruptedException
-	 * @throws IOException
-	 */
-	public static List<NodeStatus> getDataNodes() {
-		List<NodeStatus> datanodes = new ArrayList<NodeStatus>();
-		try {
-			List<String> nodesIds = zk.getChildren(ZkConf.DATANODES_PATH, true);
-			LOG.info("Cluster com " + nodesIds.size() + " datanode(s) ativo(s) no momento.");
 	
-			for (String hostName : nodesIds) {				
-					String path = ZkConf.DATANODES_PATH + "/" + hostName;
-					byte[] bytes = zk.getData(path,	true, null);
-					NodeStatus node = (NodeStatus) Serializer.toObject(bytes);
-					datanodes.add(node);
-			}
-		
-		} catch (ClassNotFoundException e) {
-			LOG.error(e.getMessage(), e);
-		}  catch (KeeperException e) {
-			LOG.error(e);
-		} catch (InterruptedException e) {
-			LOG.error(e);
-		} catch (IOException e) {
-			LOG.error(e);
-		}
-		
-		return datanodes;
-	}
 	
-	public static List<String> getHistoricDataNodes() {
-		List<String> hostNames = new ArrayList<String>();
-		
-		try {
-			List<String> historicIds = zk.getChildren(ZkConf.HISTORIC_PATH, false);
-			
-			for (String hostName : historicIds) {
-				hostNames.add(hostName);
-			}
-		} catch (KeeperException e) {
-			LOG.error(e.getMessage(), e);
-		} catch (InterruptedException e) {
-			LOG.error(e.getMessage(), e);
-		} 
-		
-		return hostNames;
-	}
+//	public static List<String> getHistoricDataNodes() {
+//		List<String> hostNames = new ArrayList<String>();
+//		
+//		try {
+//			List<String> historicIds = zk.getChildren(ZkConf.HISTORIC_PATH, false);
+//			
+//			for (String hostName : historicIds) {
+//				hostNames.add(hostName);
+//			}
+//		} catch (KeeperException e) {
+//			LOG.error(e.getMessage(), e);
+//		} catch (InterruptedException e) {
+//			LOG.error(e.getMessage(), e);
+//		} 
+//		
+//		return hostNames;
+//	}
 	
 	
 	public static void disconnect() throws InterruptedException {

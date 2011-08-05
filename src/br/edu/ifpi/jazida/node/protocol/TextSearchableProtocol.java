@@ -190,7 +190,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 		try {
 			IndexSearcher searcher = indexManager.getSearcher();
 			try {
-				if(node.isTwoResponding()){	
+				if(node.isTwoResponding()){
 					return new ExplanationWritable(multiSearcher.explain(arg0.getWeight(), arg1.get()));
 				} else{	
 					return new ExplanationWritable(searcher.explain(arg0.getWeight(), arg1.get()));
@@ -230,7 +230,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 		try {
 			IndexSearcher searcher = indexManager.getSearcher();
 			try {
-				if(node.isTwoResponding()){	
+				if(node.isTwoResponding()){
 					return new QueryWritable(multiSearcher.rewrite(arg0.getQuery()));
 				} else{	
 					return new QueryWritable(searcher.rewrite(arg0.getQuery()));
@@ -261,7 +261,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 		try {
 			IndexSearcher searcher = indexManager.getSearcher();
 			try {
-				if(node.isTwoResponding()){		
+				if(node.isTwoResponding()){
 					TopDocs search = multiSearcher.search(arg0.getWeight(), arg1.getFilter(), arg2.get());
 					return new TopDocsWritable(search);
 				} else{	
@@ -287,7 +287,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 			IndexSearcher searcher = indexManager.getSearcher();
 			try {
 				
-				if(node.isTwoResponding()){				
+				if(node.isTwoResponding()){		
 					TopFieldDocs topdocs = multiSearcher.search(arg0.getWeight(),
 							arg1.getFilter(),
 							arg2.get(),

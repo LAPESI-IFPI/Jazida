@@ -12,7 +12,7 @@ import java.util.List;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Test;
 
-import br.edu.ifpi.jazida.cluster.ClusterService;
+import br.edu.ifpi.jazida.util.ListsManager;
 import br.edu.ifpi.jazida.util.Serializer;
 import br.edu.ifpi.jazida.util.ZkConf;
 
@@ -28,7 +28,7 @@ public class ClusterServiceTest {
 		when(zk.getData(ZkConf.DATANODES_PATH + "/"+ "host1", false, null)).thenReturn(Serializer.fromObject(dataNode1));
 		
 		//Quando
-		List<NodeStatus> dataNodes = ClusterService.getDataNodes();
+		List<NodeStatus> dataNodes = ListsManager.getDataNodesConnected();
 		
 		//Então
 		assertThat(dataNodes, contains(dataNode1));

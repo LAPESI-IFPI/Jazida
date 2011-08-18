@@ -134,13 +134,13 @@ public class ListsManager {
 			int idNextNode = idNodeDesconnected + 1;
 			int idNodeLocal = getIdDatanode(nodeLocal.getHostname());
 			String pathNextNode = ZkConf.DATANODES_PATH + "/host_" + String.valueOf(idNextNode);
-			NodeStatus nextNode = getNextNode(pathNextNode);
 			String path;
 			
 			if(cacheNodesReplyReceive.contains(hostNameDesc)){
 				nodesDesconnected.add(hostNameDesc);
 				
 				if(!nodeLocal.isTwoResponding()){
+					NodeStatus nextNode = getNextNode(pathNextNode);
 					
 					if(idNodeLocal == idNextNode){
 						String hostRenponder = hostNameDesc;
@@ -152,7 +152,8 @@ public class ListsManager {
 						nodeLocal.setHostNameResponding(hostRenponder);
 						zk.setData(path, Serializer.fromObject(nodeLocal), -1);
 					
-					} else if (nextNode == null){
+					} else if (( nextNode == null) && 
+							  (!managerNodesResponding.containsKey(hostNameDesc))){
 						List<String> listNodes = getListNodeSendReply(hostNameDesc);
 						boolean nodeResponding = false;
 						NodeStatus nodeResponder = null;
@@ -292,7 +293,7 @@ public class ListsManager {
 			List<String> nodesIds = zk.getChildren(ZkConf.DATANODES_PATH, true);
 			LOG.info("Cluster com " + nodesIds.size() + " datanode(s) ativo(s) no momento.");
 	
-			for (String hostName : nodesIds) {				
+			for (String hostName : nodesIds) {
 					String path = ZkConf.DATANODES_PATH + "/" + hostName;
 					byte[] bytes = zk.getData(path,	true, null);
 					NodeStatus node = (NodeStatus) Serializer.toObject(bytes);

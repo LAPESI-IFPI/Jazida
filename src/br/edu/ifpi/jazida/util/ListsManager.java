@@ -129,7 +129,7 @@ public class ListsManager {
 	}
 	
 	public synchronized static void managerNodesDeleted(String hostNameDesc, NodeStatus nodeLocal) {
-		try{
+		try{ 
 			int idNodeDesconnected = getIdDatanode(hostNameDesc);
 			int idNextNode = idNodeDesconnected + 1;
 			int idNodeLocal = getIdDatanode(nodeLocal.getHostname());

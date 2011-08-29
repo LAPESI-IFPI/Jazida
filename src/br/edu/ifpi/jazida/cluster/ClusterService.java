@@ -128,7 +128,6 @@ public class ClusterService implements Watcher, VoidCallback {
 	
 			case NodeDeleted:
 				LOG.info("Um datanode desconectou-se do cluster.");
-				System.out.println("DESCONECTOU");
 				zk.sync(path, this, null);
 				break;
 			

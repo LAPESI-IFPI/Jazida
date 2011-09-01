@@ -28,7 +28,8 @@ public class ListsManager {
 	private static Map<Integer, NodeStatus> cacheMapReplyUtil = new HashMap<Integer, NodeStatus>();
 	private static List<String> nodesReplyReceive = new ArrayList<String>();
 	private static List<String> cacheNodesReplyReceive = new ArrayList<String>();
-	private static Map<String, String> managerNodesResponding = new HashMap<String, String>();
+	private static Map<String, List<String>> managerNodesResponding = new HashMap<String, List<String>>();
+	private static Map<String, List<String>> historicSendNodesDesconnected = new HashMap<String, List<String>>();
 	private static int idLastNode = 0;
 	private static int idFirstNode = 1;
 	private static int replyFrequency;
@@ -98,9 +99,9 @@ public class ListsManager {
 		
 		if(!mapReplyUtil.isEmpty())
 			mapReplyUtil.clear();
-	
+
 		for(NodeStatus node: nodesConnected){
-			int id = getIdDatanode(node.getHostname());			
+			int id = getIdDatanode(node.getHostname());
 			mapReplyUtil.put(id, node);
 			if(id > idLastNode)
 				idLastNode = id;
@@ -127,88 +128,209 @@ public class ListsManager {
 		try{
 			int idNodeDesconnected = getIdDatanode(hostNameDesc);
 			int idNextNode = idNodeDesconnected + 1;
-			int idNodeLocal = getIdDatanode(nodeLocal.getHostname());
-			String pathNextNode;
+//			int idNodeLocal = getIdDatanode(HOSTNAME);
+//			String pathNextNode;
 			String path;
 			
 			if(idNextNode > idLastNode)
 				idNextNode = idFirstNode;
 			
-			pathNextNode = ZkConf.DATANODES_PATH + "/host_" + String.valueOf(idNextNode);
+		//	pathNextNode = ZkConf.DATANODES_PATH + "/" + "host_" + String.valueOf(idNextNode);
 			
 			if(cacheNodesReplyReceive.contains(hostNameDesc)){
 				nodesDesconnected.add(hostNameDesc);
-				
-				if(!nodeLocal.isTwoResponding()){
-					NodeStatus nextNode = getNextNode(pathNextNode);
+				List<String> listSend = getListNodeSendReply(hostNameDesc);
+				historicSendNodesDesconnected.put(hostNameDesc, listSend);		
+			//	NodeStatus nextNode = getNextNode(pathNextNode);
 					
-					if(idNodeLocal == idNextNode){
-						String hostRenponder = hostNameDesc;
-						if(managerNodesResponding.containsKey(hostNameDesc)){
-							hostRenponder = managerNodesResponding.get(hostNameDesc);
-						}
-						path = ZkConf.DATANODES_PATH + "/" + nodeLocal.getHostname();
-						nodeLocal.setTwoResponding(true);
-						nodeLocal.setHostNameResponding(hostRenponder);
-						System.out.println("nodeLocal respondendo: " + nodeLocal.getHostNameResponding());
+				if(!managerNodesResponding.containsKey(hostNameDesc)){
+					List<NodeStatus> nodesExists = new ArrayList<NodeStatus>();
+					NodeStatus nodeResponder = null;
+					int aux = nodesConnected.size();
+					
+					for (String hostName : listSend) {
+						path = ZkConf.DATANODES_PATH + "/" + hostName;
+						try{
+							byte[] bytes = zk.getData(path,	true, null);
+							NodeStatus datanode = (NodeStatus) Serializer.toObject(bytes);
+							nodesExists.add(datanode);			
+						} catch (KeeperException e) {}
+					}
+				
+					for(NodeStatus node: nodesExists){
+						if(node.getNodesResponding().size() < aux){
+							nodeResponder = node;
+						} 
+						aux = node.getNodesResponding().size();
+					}
+								
+					if(nodeResponder.getHostname().equals(HOSTNAME)){
+						path = ZkConf.DATANODES_PATH + "/" + HOSTNAME;
+						nodeLocal.getNodesResponding().add(hostNameDesc);
+						System.out.println("nodeLocal respondendo: " + nodeLocal.getNodesResponding());					
 						try {
 							zk.setData(path, Serializer.fromObject(nodeLocal), -1);
-						} catch (KeeperException e) {
-							
-						}
+						} catch (KeeperException e) {}
+					}
+				
+				} else {
 					
-					} else if ( nextNode == null || nextNode.isTwoResponding() ||
-							  (managerNodesResponding.containsKey(hostNameDesc))){
-						List<String> listNodes = getListNodeSendReply(hostNameDesc);
-						boolean nodeResponding = false;
-						NodeStatus nodeResponder = null;
-						int lesser;
-						int nearest = idLastNode;
-						
-						for (String hostName : listNodes) {
+					List<NodeStatus> nodesExists = new ArrayList<NodeStatus>();
+					NodeStatus nodeResponder = null;
+					int aux = nodesConnected.size();
+					
+					for (String hostName : listSend) {
+						path = ZkConf.DATANODES_PATH + "/" + hostName;
+						try{
+							byte[] bytes = zk.getData(path,	true, null);
+							NodeStatus datanode = (NodeStatus) Serializer.toObject(bytes);
+							nodesExists.add(datanode);
+						} catch (KeeperException e) {}
+					}
+				
+					for(NodeStatus node: nodesExists){
+						if(node.getNodesResponding().size() < aux){
+							nodeResponder = node;
+						} 
+						aux = node.getNodesResponding().size();
+					}
+								
+					if(nodeResponder.getHostname().equals(HOSTNAME)){
+						path = ZkConf.DATANODES_PATH + "/" + HOSTNAME;
+						nodeLocal.getNodesResponding().add(hostNameDesc);
+						System.out.println("nodeLocal respondendo: " + nodeLocal.getNodesResponding());					
+						try {
+							zk.setData(path, Serializer.fromObject(nodeLocal), -1);
+						} catch (KeeperException e) {}
+					}
+					
+					nodesExists.clear();					
+					
+					List<String> listNodesResponding = managerNodesResponding.get(hostNameDesc);
+					List<String> listHistoric = new ArrayList<String>();
+					aux = nodesConnected.size();
+					for(String nodeName: listNodesResponding){
+						listHistoric = historicSendNodesDesconnected.get(nodeName);
+						for (String hostName : listHistoric) {
 							path = ZkConf.DATANODES_PATH + "/" + hostName;
 							try{
 								byte[] bytes = zk.getData(path,	true, null);
-								if(bytes != null){
-									NodeStatus datanode = (NodeStatus) Serializer.toObject(bytes);
-									if(datanode.getHostNameResponding().equals(hostNameDesc)){
-										nodeResponding = true;
-									}
-									
-									int id = getIdDatanode(datanode.getHostname());
-									if(!datanode.isTwoResponding()){
-										if (id > idNodeDesconnected){
-											lesser = id - idNodeDesconnected;
-										} else{
-											lesser = idNodeDesconnected - id;
-										}
-										
-										if(lesser < nearest){
-											nearest = lesser;
-											nodeResponder = datanode;
-										}
-									}								
-								}
-							} catch (KeeperException e) {
-								
-							}
+								NodeStatus datanode = (NodeStatus) Serializer.toObject(bytes);
+								nodesExists.add(datanode);
+							} catch (KeeperException e) {}
 						}
 						
-						if((nodeResponding == false) && 
-								(nodeResponder.getHostname().equals(nodeLocal.getHostname()))){
-							path = ZkConf.DATANODES_PATH + "/" + nodeLocal.getHostname();
-							nodeLocal.setTwoResponding(true);
-							nodeLocal.setHostNameResponding(hostNameDesc);
-							System.out.println("nodeLocal respondendo: " + nodeLocal.getHostNameResponding());
-							try {
-								zk.setData(path, Serializer.fromObject(nodeLocal), -1);
-							} catch (KeeperException e) {
-								
+						for(NodeStatus node: nodesExists){
+							if(node.getNodesResponding().size() < aux){
+								nodeResponder = node;
 							}
+							aux = node.getNodesResponding().size();
+						}
+						
+						path = ZkConf.DATANODES_PATH + "/" + nodeResponder.getHostname();
+						nodeResponder.getNodesResponding().add(nodeName);
+						System.out.println(nodeResponder + "= nodeResponder respondendo: " + nodeResponder.getNodesResponding());
+						try {
+							zk.setData(path, Serializer.fromObject(nodeResponder), -1);	
+						} catch (KeeperException e) {}
+						
+					}
+					
+					if (nodeLocal.getNodesResponding().size() > 1) {
+						nodesExists.clear();
+						List<String> nodes = nodeLocal.getNodesResponding();
+						String hostName = nodes.get(0);
+						nodes.remove(0);
+						
+						listHistoric = historicSendNodesDesconnected.get(hostName);
+						for (String name : listHistoric) {
+							path = ZkConf.DATANODES_PATH + "/" + name;
+							try{
+								byte[] bytes = zk.getData(path,	true, null);
+								NodeStatus datanode = (NodeStatus) Serializer.toObject(bytes);
+								nodesExists.add(datanode);						
+							} catch (KeeperException e) {}
+						}
+						
+						
+						for(NodeStatus node: nodesExists){
+							if(node.getNodesResponding().size() < aux){
+								nodeResponder = node;
+							} 
+							aux = node.getNodesResponding().size();							
+						}
+						
+						path = ZkConf.DATANODES_PATH + "/" + nodeResponder.getHostname();
+						nodeResponder.getNodesResponding().add(hostName);
+						System.out.println(nodeResponder + "= nodeResponder respondendo: " + nodeResponder.getNodesResponding());
+ 							try {
+								zk.setData(path, Serializer.fromObject(nodeResponder), -1);								
+							} catch (KeeperException e) {}
 						}
 					}
-				}
+					
+					
+					
 				
+					/*if(managerNodesResponding.containsKey(hostNameDesc)){
+						path = ZkConf.DATANODES_PATH + "/" + nodeLocal.getHostname();
+						List<String> listAux = managerNodesResponding.get(hostNameDesc);
+						for(String hostRenponding: listAux){
+							nodeLocal.getNodesResponding().add(hostRenponding);
+							System.out.println("nodeLocal respondendo: " + nodeLocal.getNodesResponding());					
+						}
+						try {
+							zk.setData(path, Serializer.fromObject(nodeLocal), -1);
+						} catch (KeeperException e) {}
+						
+					} else {
+						path = ZkConf.DATANODES_PATH + "/" + nodeLocal.getHostname();
+						nodeLocal.getNodesResponding().add(hostNameDesc);
+						System.out.println("nodeLocal respondendo: " + nodeLocal.getNodesResponding());
+						try {
+							zk.setData(path, Serializer.fromObject(nodeLocal), -1);
+						} catch (KeeperException e) {}
+					}
+					
+				} else if ( nextNode == null || (managerNodesResponding.containsKey(hostNameDesc))){
+					List<String> listNodes = getListNodeSendReply(hostNameDesc);
+					List<NodeStatus> nodesExists = new ArrayList<NodeStatus>();
+					NodeStatus nodeResponder = null;
+					int aux = nodesConnected.size();
+						
+					for (String hostName : listNodes) {
+						path = ZkConf.DATANODES_PATH + "/" + hostName;
+						try{
+							byte[] bytes = zk.getData(path,	true, null);
+							NodeStatus datanode = (NodeStatus) Serializer.toObject(bytes);
+							nodesExists.add(datanode);						
+						} catch (KeeperException e) {}
+					}
+					
+					if(nodesExists.size() == 1){
+						if(nodesExists.contains(nodeLocal)){
+							nodeResponder = nodeLocal;
+						}
+						
+					} else {
+						for(NodeStatus node: nodesExists){
+							if(node.getNodesResponding().size() < aux){
+								nodeResponder = node;
+							} 
+							aux = node.getNodesResponding().size();
+						}
+					}
+					
+					if(nodeResponder.getHostname().equals(nodeLocal.getHostname())){
+						path = ZkConf.DATANODES_PATH + "/" + nodeLocal.getHostname();
+						nodeLocal.getNodesResponding().add(hostNameDesc);
+						System.out.println("nodeLocal respondendo: " + nodeLocal.getNodesResponding());					
+						try {
+							zk.setData(path, Serializer.fromObject(nodeLocal), -1);
+						} catch (KeeperException e) {}
+					}
+				}
+				*/
 				if(managerNodesResponding.containsKey(hostNameDesc)){
 					managerNodesResponding.remove(hostNameDesc);
 				}
@@ -224,19 +346,20 @@ public class ListsManager {
 		}
 	}
 	
-	public synchronized static void managerNodesChanged(String path) {
+	public synchronized static void managerNodesChanged(String path, NodeStatus node) {
 		try{
 			byte[] bytes = zk.getData(path,	true, null);
-			if(bytes != null){
-				NodeStatus datanode = (NodeStatus) Serializer.toObject(bytes);
-				if(managerNodesResponding.containsKey(datanode.getHostname())){
-					managerNodesResponding.remove(datanode.getHostname());
-				} else{
-					managerNodesResponding.put(datanode.getHostname(), datanode.getHostNameResponding());					
-				}
-				
-				System.out.println("managerNodesResponding: " + managerNodesResponding);
-			}
+			List<String> nodesResponding = new ArrayList<String>();
+			NodeStatus datanode = (NodeStatus) Serializer.toObject(bytes);
+			if (datanode.getHostname().equals(HOSTNAME))
+				node = datanode;
+			
+			managerNodesResponding.put(datanode.getHostname(), datanode.getNodesResponding());
+			nodesResponding = managerNodesResponding.get(datanode.getHostname());
+			if(nodesResponding.isEmpty())
+				managerNodesResponding.remove(datanode.getHostname());
+			
+			System.out.println("managerNodesResponding: " + managerNodesResponding);			
 			
 		} catch (KeeperException e) {
 			LOG.error(e);
@@ -251,14 +374,16 @@ public class ListsManager {
 	
 	public synchronized static void managerNodesConnected(String hostName, NodeStatus node) {
 		try{
-			String path = ZkConf.DATANODES_PATH + "/" + node.getHostname();
+			String path = ZkConf.DATANODES_PATH + "/" + HOSTNAME;
 			
 			if(nodesDesconnected.contains(hostName)){
-				if(hostName.equals(node.getHostNameResponding())){
+				if (historicSendNodesDesconnected.containsKey(hostName));
+					historicSendNodesDesconnected.remove(hostName);
+				
+				if(node.getNodesResponding().contains(hostName)){
 					nodesDesconnected.remove(nodesDesconnected.indexOf(hostName));
-					node.setTwoResponding(false);
-					node.setHostNameResponding("");
-					System.out.println("node resp.: " + node.getHostNameResponding());
+					node.getNodesResponding().remove(node.getNodesResponding().indexOf(hostName));
+					System.out.println("node resp.: " + node.getNodesResponding());
 					zk.setData(path, Serializer.fromObject(node), -1);
 					
 				} else{
@@ -266,6 +391,8 @@ public class ListsManager {
 				}
 				
 				System.out.println("nodesDesconnected: " + nodesDesconnected);
+				System.out.println("nodeLocal respondendo: " + node.getNodesResponding());			
+				
 			}
 		
 		} catch (KeeperException e) {
@@ -361,9 +488,7 @@ public class ListsManager {
 		NodeStatus node = null;
 		try{
 			byte[] bytes = zk.getData(path,	true, null);
-			if(bytes != null)
-				node = (NodeStatus) Serializer.toObject(bytes);
-			
+			node = (NodeStatus) Serializer.toObject(bytes);			
 		} catch (ClassNotFoundException e) {
 			LOG.error(e);
 		}  catch (KeeperException e) {

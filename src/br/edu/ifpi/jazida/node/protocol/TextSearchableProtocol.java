@@ -34,10 +34,11 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 	
 	private static final Logger LOG = Logger.getLogger(TextSearchableProtocol.class);
 	private IndexManager indexManager;
-	private IndexSearcher[] searchers = new IndexSearcher[2];
+	private IndexSearcher[] searchers;
 	private ParallelMultiSearcher multiSearcher;
 	private NodeStatus node;
-
+	private int qtdResponding;
+	
 	public TextSearchableProtocol(IndexManager manager, NodeStatus node) {
 		super();
 		this.indexManager = manager;
@@ -46,8 +47,11 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 
 	@Override
 	public long getProtocolVersion(String arg0, long arg1) throws IOException {
-		if(node.isTwoResponding())
+		qtdResponding = node.getNodesResponding().size();
+		if(qtdResponding > 0){
+			searchers = new IndexSearcher[qtdResponding];
 			createMultiSeacher();
+		}
 		return 0;
 	}
 	
@@ -55,7 +59,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 	@Override
 	public void close(){
 		try {
-			if(node.isTwoResponding()){
+			if(qtdResponding > 0){
 				multiSearcher.close();
 			} else{
 				IndexSearcher searcher = indexManager.getSearcher();
@@ -72,7 +76,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 		try {
 			IndexSearcher searcher = indexManager.getSearcher();
 			try {
-				if(node.isTwoResponding()){
+				if(qtdResponding > 0){
 					return new DocumentWritable(multiSearcher.doc(arg0.get()));
 				} else{	
 					return new DocumentWritable(searcher.doc(arg0.get()));
@@ -95,7 +99,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 		try {
 			IndexSearcher searcher = indexManager.getSearcher();
 			try {
-				if(node.isTwoResponding()){	
+				if(qtdResponding > 0){	
 					Document doc = multiSearcher.doc(arg0.get(), arg1.getFieldSelector());
 					return new DocumentWritable(doc);
 				} else{		
@@ -117,7 +121,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 		try {
 			IndexSearcher searcher = indexManager.getSearcher();
 			try {
-				if(node.isTwoResponding()){
+				if(qtdResponding > 0){
 					return new IntWritable(multiSearcher.docFreq(arg0.getTerm()));
 				} else{	
 					return new IntWritable(searcher.docFreq(arg0.getTerm()));
@@ -135,7 +139,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 	@Override
 	public IntWritable[] docFreqs(TermWritable[] termsWritable) {
 		try {
-			if(node.isTwoResponding()){
+			if(qtdResponding > 0){
 				Term[] terms = new Term[termsWritable.length]; 
 				for (int i = 0; i < termsWritable.length; i++) {
 					terms[i] = termsWritable[i].getTerm();
@@ -190,7 +194,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 		try {
 			IndexSearcher searcher = indexManager.getSearcher();
 			try {
-				if(node.isTwoResponding()){
+				if(qtdResponding > 0){
 					return new ExplanationWritable(multiSearcher.explain(arg0.getWeight(), arg1.get()));
 				} else{	
 					return new ExplanationWritable(searcher.explain(arg0.getWeight(), arg1.get()));
@@ -210,7 +214,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 		try {
 			IndexSearcher searcher = indexManager.getSearcher();
 			try {
-				if(node.isTwoResponding()){
+				if(qtdResponding > 0){
 					return new IntWritable(multiSearcher.maxDoc());
 				} else{	
 					return new IntWritable(searcher.maxDoc());
@@ -230,7 +234,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 		try {
 			IndexSearcher searcher = indexManager.getSearcher();
 			try {
-				if(node.isTwoResponding()){
+				if(qtdResponding > 0){
 					return new QueryWritable(multiSearcher.rewrite(arg0.getQuery()));
 				} else{	
 					return new QueryWritable(searcher.rewrite(arg0.getQuery()));
@@ -261,7 +265,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 		try {
 			IndexSearcher searcher = indexManager.getSearcher();
 			try {
-				if(node.isTwoResponding()){
+				if(qtdResponding > 0){
 					TopDocs search = multiSearcher.search(arg0.getWeight(), arg1.getFilter(), arg2.get());
 					return new TopDocsWritable(search);
 				} else{	
@@ -287,7 +291,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 			IndexSearcher searcher = indexManager.getSearcher();
 			try {
 				
-				if(node.isTwoResponding()){		
+				if(qtdResponding > 0){		
 					TopFieldDocs topdocs = multiSearcher.search(arg0.getWeight(),
 							arg1.getFilter(),
 							arg2.get(),
@@ -312,8 +316,12 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 	
 	private synchronized void createMultiSeacher(){
 		try {
-			searchers[0] = new IndexSearcher(indexManager.getDirectory());
-			searchers[1] = new IndexSearcher(getDiretory(node.getHostNameResponding()));
+			int i;
+			for (i = 0; i <= qtdResponding; i++){
+				String hostName = node.getNodesResponding().get(i);
+				searchers[i] = new IndexSearcher(getDiretory(hostName));
+			}
+			searchers[i] = new IndexSearcher(indexManager.getDirectory());
 			multiSearcher = new ParallelMultiSearcher(searchers);
 		} catch (CorruptIndexException e) {
 			e.printStackTrace();

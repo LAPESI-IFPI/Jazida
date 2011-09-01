@@ -132,7 +132,7 @@ public class ClusterService implements Watcher, VoidCallback {
 				break;
 			
 			case NodeDataChanged:
-				ListsManager.managerNodesChanged(path);
+				ListsManager.managerNodesChanged(path, node);
 				break;
 				
 			case NodeChildrenChanged:
@@ -150,7 +150,7 @@ public class ClusterService implements Watcher, VoidCallback {
 			String hostName = path.substring(begin + 1, end);
 			
 //			if(path.equals(ZkConf.HISTORIC_PATH)){
-//				ListsManager.loadMemoryHistoricNodes();	
+//				ListsManager.loadMemoryHistoricNodes();
 //			} else {
 			if((zk.exists(path, true) == null)) {
 				LOG.info("Datanode que se desconectou: " + hostName);

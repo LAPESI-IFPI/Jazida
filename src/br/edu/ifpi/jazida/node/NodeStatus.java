@@ -1,6 +1,8 @@
 package br.edu.ifpi.jazida.node;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Representa o status de um {@link DataNode}. Guarda informações sobre o estado
@@ -15,8 +17,7 @@ public class NodeStatus implements Serializable {
 
 	private String hostname;
 	private String address; // Endereço IP do host
-	private boolean twoResponding;
-	private String hostNameResponding;
+	private List<String> nodesResponding;
 	
 	private int textSearchServerPort;
 	private int textIndexerServerPort;
@@ -33,8 +34,7 @@ public class NodeStatus implements Serializable {
 	public NodeStatus(String hostname, String address, int textIndexerServerPort, int textSearchServerPort, int imageIndexerServerPort, int imageSearcherServerPort, int textReplicationServerPort, int imageReplicationServerPort, int textReplicationSupportServerPort, int imageReplicationSupportServerPort) {
 		this.hostname = hostname;
 		this.address = address;
-		twoResponding = false;
-		hostNameResponding = "";
+		nodesResponding = new ArrayList<String>();
 		this.textIndexerServerPort = textIndexerServerPort;
 		this.textSearchServerPort = textSearchServerPort;
 		this.imageIndexerServerPort = imageIndexerServerPort;
@@ -61,20 +61,12 @@ public class NodeStatus implements Serializable {
 		this.address = address;
 	}
 	
-	public boolean isTwoResponding() {
-		return twoResponding;
+	public List<String> getNodesResponding() {
+		return nodesResponding;
 	}
 
-	public void setTwoResponding(boolean twoResponding) {
-		this.twoResponding = twoResponding;
-	}
-	
-	public String getHostNameResponding() {
-		return hostNameResponding;
-	}
-
-	public void setHostNameResponding(String hostNameResponding) {
-		this.hostNameResponding = hostNameResponding;
+	public void setNodesResponding(List<String> nodesResponding) {
+		this.nodesResponding = nodesResponding;
 	}
 
 	public int getTextSearchServerPort() {

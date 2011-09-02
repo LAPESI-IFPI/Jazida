@@ -49,7 +49,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 	public long getProtocolVersion(String arg0, long arg1) throws IOException {
 		qtdResponding = node.getNodesResponding().size();
 		if(qtdResponding > 0){
-			searchers = new IndexSearcher[qtdResponding];
+			searchers = new IndexSearcher[qtdResponding + 1];
 			createMultiSeacher();
 		}
 		return 0;
@@ -316,12 +316,12 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 	
 	private synchronized void createMultiSeacher(){
 		try {
-			int i;
-			for (i = 0; i <= qtdResponding; i++){
-				String hostName = node.getNodesResponding().get(i);
+			int i = 0;
+			searchers[i] = new IndexSearcher(indexManager.getDirectory());
+			for (String hostName: node.getNodesResponding()){
+				i++;
 				searchers[i] = new IndexSearcher(getDiretory(hostName));
 			}
-			searchers[i] = new IndexSearcher(indexManager.getDirectory());
 			multiSearcher = new ParallelMultiSearcher(searchers);
 		} catch (CorruptIndexException e) {
 			e.printStackTrace();

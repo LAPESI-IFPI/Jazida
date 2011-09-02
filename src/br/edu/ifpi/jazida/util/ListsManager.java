@@ -109,12 +109,14 @@ public class ListsManager {
 	}
 	
 	private static void loadCache(){
-		if(!cacheMapReplyUtil.isEmpty())
+		if(!cacheMapReplyUtil.isEmpty()){
 			cacheMapReplyUtil.clear();
+		}
 		cacheMapReplyUtil.putAll(mapReplyUtil);
 		cacheReplyFrequency = replyFrequency;
-		if(!cacheNodesReplyReceive.isEmpty()) 
+		if(!cacheNodesReplyReceive.isEmpty()){ 
 			cacheNodesReplyReceive.clear();
+		}
 		cacheNodesReplyReceive.addAll(nodesReplyReceive);
 	}
 	
@@ -264,38 +266,6 @@ public class ListsManager {
 							} catch (KeeperException e) {}
 						}
 					}
-					
-//					if (nodeLocal.getNodesResponding().size() > 1) {
-//						nodesExists.clear();
-//						List<String> nodes = nodeLocal.getNodesResponding();
-//						String hostName = nodes.get(0);
-//						nodes.remove(0);
-//						
-//						listHistoric = historicSendNodesDesconnected.get(hostName);
-//						for (String name : listHistoric) {
-//							path = ZkConf.DATANODES_PATH + "/" + name;
-//							try{
-//								byte[] bytes = zk.getData(path,	true, null);
-//								NodeStatus datanode = (NodeStatus) Serializer.toObject(bytes);
-//								nodesExists.add(datanode);						
-//							} catch (KeeperException e) {}
-//						}
-//						
-//						
-//						for(NodeStatus node: nodesExists){
-//							if(node.getNodesResponding().size() < aux){
-//								nodeResponder = node;
-//							} 
-//							aux = node.getNodesResponding().size();							
-//						}
-//						
-//						path = ZkConf.DATANODES_PATH + "/" + nodeResponder.getHostname();
-//						nodeResponder.getNodesResponding().add(hostName);
-//						System.out.println(nodeResponder + "= nodeResponder respondendo: " + nodeResponder.getNodesResponding());
-// 							try {
-//								zk.setData(path, Serializer.fromObject(nodeResponder), -1);								
-//							} catch (KeeperException e) {}
-//					}
 				}
 				
 				if(managerNodesResponding.containsKey(hostNameDesc)){
@@ -330,8 +300,6 @@ public class ListsManager {
 			
 		} catch (KeeperException e) {
 			LOG.error(e);
-		} catch (NullPointerException e) {
-			System.out.println(" nul pointt expéici");
 		}catch (InterruptedException e) {
 			LOG.error(e);
 		} catch (IOException e) {
@@ -452,26 +420,6 @@ public class ListsManager {
 		return nodes;
 	}
 
-	private static NodeStatus getNextNode(String path){
-	
-		NodeStatus node = null;
-		try{
-			byte[] bytes = zk.getData(path,	true, null);
-			node = (NodeStatus) Serializer.toObject(bytes);			
-		} catch (ClassNotFoundException e) {
-			LOG.error(e);
-		}  catch (KeeperException e) {
-			
-		} catch (InterruptedException e) {
-			LOG.error(e);
-		} catch (IOException e) {
-			LOG.error(e);
-		}
-		
-		return node;
-		
-	}
-
 	private static int getIdDatanode(String hostname){
 		int underline = hostname.lastIndexOf("_");
 		int end = hostname.length();
@@ -507,5 +455,24 @@ public class ListsManager {
 //	}
 //}
 
+//	private static NodeStatus getNextNode(String path){
+
+//			NodeStatus node = null;
+//			try{
+//				byte[] bytes = zk.getData(path,	true, null);
+//				node = (NodeStatus) Serializer.toObject(bytes);			
+//			} catch (ClassNotFoundException e) {
+//				LOG.error(e);
+//			}  catch (KeeperException e) {
+//				
+//			} catch (InterruptedException e) {
+//				LOG.error(e);
+//			} catch (IOException e) {
+//				LOG.error(e);
+//			}
+//			
+//			return node;
+//			
+//		}
 
 }

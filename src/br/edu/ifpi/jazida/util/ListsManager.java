@@ -31,7 +31,7 @@ public class ListsManager {
 	private static Map<String, List<String>> managerNodesResponding = new HashMap<String, List<String>>();
 	private static Map<String, List<String>> historicSendNodesDesconnected = new HashMap<String, List<String>>();
 	private static int idLastNode = 0;
-	private static int idFirstNode = 1;
+	private static int idFirstNode = 9999999;
 	private static int replyFrequency;
 	private static int cacheReplyFrequency;
 	
@@ -105,6 +105,9 @@ public class ListsManager {
 			mapReplyUtil.put(id, node);
 			if(id > idLastNode)
 				idLastNode = id;
+			
+			if(id < idFirstNode)
+				idFirstNode = id;
 		}
 	}
 	
@@ -130,23 +133,13 @@ public class ListsManager {
 	
 	public synchronized static void managerNodesDeleted(String hostNameDesc, NodeStatus nodeLocal) {
 		try{
-			//int idNodeDesconnected = getIdDatanode(hostNameDesc);
-			//int idNextNode = idNodeDesconnected + 1;
-//			int idNodeLocal = getIdDatanode(HOSTNAME);
-//			String pathNextNode;
 			String path;
-			
-		//	if(idNextNode > idLastNode)
-		//		idNextNode = idFirstNode;
-			
-		//	pathNextNode = ZkConf.DATANODES_PATH + "/" + "host_" + String.valueOf(idNextNode);
+
+			nodesDesconnected.add(hostNameDesc);
+			List<String> listSend = getListNodeSendReply(hostNameDesc);
+			historicSendNodesDesconnected.put(hostNameDesc, listSend);
 			
 			if(cacheNodesReplyReceive.contains(hostNameDesc)){
-				nodesDesconnected.add(hostNameDesc);
-				List<String> listSend = getListNodeSendReply(hostNameDesc);
-				historicSendNodesDesconnected.put(hostNameDesc, listSend);
-			//	NodeStatus nextNode = getNextNode(pathNextNode);
-					
 				if(!managerNodesResponding.containsKey(hostNameDesc)){
 					List<NodeStatus> nodesExists = new ArrayList<NodeStatus>();
 					NodeStatus nodeResponder = null;
@@ -226,6 +219,7 @@ public class ListsManager {
 						}
 					}
 					
+					Thread.sleep(1500);
 					nodesExists.clear();					
 					
 					List<String> listNodesResponding = managerNodesResponding.get(hostNameDesc);
@@ -260,11 +254,12 @@ public class ListsManager {
 						if((nodeResponder != null) && (!nodeResponder.getHostname().equals(""))){
 							path = ZkConf.DATANODES_PATH + "/" + nodeResponder.getHostname();
 							nodeResponder.getNodesResponding().add(nodeName);
-							System.out.println(nodeResponder + "= nodeResponder respondendo: " + nodeResponder.getNodesResponding());
 							try {
 								zk.setData(path, Serializer.fromObject(nodeResponder), -1);	
 							} catch (KeeperException e) {}
 						}
+						
+						System.out.println(nodeResponder + " = nodeResponder respondendo: " + nodeResponder.getNodesResponding());
 					}
 				}
 				
@@ -289,14 +284,15 @@ public class ListsManager {
 			List<String> nodesResponding = new ArrayList<String>();
 			NodeStatus datanode = (NodeStatus) Serializer.toObject(bytes);
 			if (datanode.getHostname().equals(HOSTNAME))
-				node = datanode;
+				node.setNodesResponding(datanode.getNodesResponding());
 			
 			managerNodesResponding.put(datanode.getHostname(), datanode.getNodesResponding());
 			nodesResponding = managerNodesResponding.get(datanode.getHostname());
 			if(nodesResponding.isEmpty())
 				managerNodesResponding.remove(datanode.getHostname());
 			
-			System.out.println("managerNodesResponding: " + managerNodesResponding);			
+			System.out.println("managerNodesResponding: " + managerNodesResponding);
+			System.out.println("respondendo: " + node.getNodesResponding());
 			
 		} catch (KeeperException e) {
 			LOG.error(e);
@@ -314,7 +310,7 @@ public class ListsManager {
 			String path = ZkConf.DATANODES_PATH + "/" + HOSTNAME;
 			
 			if(nodesDesconnected.contains(hostName)){
-				if (historicSendNodesDesconnected.containsKey(hostName));
+				if (historicSendNodesDesconnected.containsKey(hostName))
 					historicSendNodesDesconnected.remove(hostName);
 				
 				if(node.getNodesResponding().contains(hostName)){

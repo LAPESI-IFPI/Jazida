@@ -11,6 +11,7 @@ import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.LockObtainFailedException;
+import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.lucene.util.Version;
 import org.apache.zookeeper.KeeperException;
 
@@ -151,7 +152,7 @@ public class DataNode {
 		imageIndexerServer.start(false);
 
 		LOG.info("Iniciando o protocolo de RPC ImageSearchServer");
-		imageSearcherServer = new RPCServer(new ImageSearcherProtocol(),
+		imageSearcherServer = new RPCServer(new ImageSearcherProtocol(new SimpleFSDirectory(imageIndexPath), node),
 											node.getAddress(),
 											node.getImageSearcherServerPort());
 		imageSearcherServer.start(false);

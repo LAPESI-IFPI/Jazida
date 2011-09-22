@@ -36,8 +36,8 @@ public class WritableUtils {
 	/**
 	 * Conversão de {@link Map}&lt;Text, Text&gt; para um {@link MapWritable}
 	 * 
-	 * @param map  Um mapa de MapWritable&lt;Text, Text&gt;.
-	 * @return Um mapa de Map&lt;String,String&gt equivalente ao recebido.
+	 * @param map  Um mapa de MapWritable&lt;String, String&gt;.
+	 * @return Um mapa de Map&lt;Text,Text&gt equivalente ao recebido.
 	 */
 	public static MapWritable convertMapToMapWritable(Map<String, String> map) {
 		if(map == null) {

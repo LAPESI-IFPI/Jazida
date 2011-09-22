@@ -92,7 +92,6 @@ public class TextIndexerClient implements TextIndexer {
 			
 			MetaDocumentWritable documentWrap = new MetaDocumentWritable(metaDocument);
 			NodeStatus node = ListsManager.nextNode();
-			//node = ListsManager.nextNode();
 			ITextIndexerProtocol proxy = proxyMap.get(node.getHostname());
 			result = proxy.addText(documentWrap, new Text(content));			
 			

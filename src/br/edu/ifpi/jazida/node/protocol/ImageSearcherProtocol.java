@@ -58,10 +58,23 @@ public class ImageSearcherProtocol implements IImageSearchProtocol {
 	
 	@Override
 	public long getProtocolVersion(String arg0, long arg1) throws IOException {
-		qtdResponding = node.getNodesResponding().size();
-		if(qtdResponding > 0){
-			searchers = new IndexSearcher[qtdResponding + 1];
-			createMultiSeacher();
+		if( node.getNodesResponding().size() <= 0){
+			 node.getNodesResponding().add("host_2");
+			 node.getNodesResponding().add("host_3");
+		}
+		int qtd = node.getNodesResponding().size();
+		if(qtdResponding != qtd){
+			qtdResponding = qtd;
+			if(qtdResponding > 0){
+				int cont = 0;
+				for(String hostName: node.getNodesResponding()){
+					if(new File(PathJazida.IMAGE_INDEX_REPLY.getValue() + "/" + hostName).canRead()){
+						cont++;
+					}
+				}
+				searchers = new IndexSearcher[cont + 1];
+				createMultiSeacher();
+			}
 		}
 		return 0;
 	}
@@ -421,6 +434,7 @@ public class ImageSearcherProtocol implements IImageSearchProtocol {
 				searchers[i] = new IndexSearcher(getDiretory(hostName));
 			}
 			multiSearcher = new ParallelMultiSearcher(searchers);
+			System.out.println(multiSearcher.maxDoc());
 		} catch (CorruptIndexException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -452,8 +466,4 @@ public class ImageSearcherProtocol implements IImageSearchProtocol {
 					e);
 		}
 	}
-	
-	
-
-	
 }

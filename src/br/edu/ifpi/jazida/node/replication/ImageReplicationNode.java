@@ -126,6 +126,7 @@ public class ImageReplicationNode {
 				ArrayList<Future<IntWritable>> requests = new ArrayList<Future<IntWritable>>();
 				LOG.info("Deletando imagem nos índices das Réplicas...");
 				for (final NodeStatus nodeStatus : datanodes) {
+					LOG.info("Enviando para: " + nodeStatus);
 					Future<IntWritable> request = threadPool.submit(new Callable<IntWritable>() {
 						@Override
 						public IntWritable call() throws Exception {
@@ -162,6 +163,7 @@ public class ImageReplicationNode {
 				ArrayList<Future<IntWritable>> requests = new ArrayList<Future<IntWritable>>();
 				LOG.info("Atualizando imagem nos índices das Réplicas...");
 				for (final NodeStatus nodeStatus : datanodes) {
+					LOG.info("Enviando para: " + nodeStatus);
 					Future<IntWritable> request = threadPool.submit(new Callable<IntWritable>() {
 						@Override
 						public IntWritable call() throws Exception {

@@ -56,12 +56,12 @@ public class TextReplicationNodeTest {
 	@Test
 	public void deveriaReplicarViaIndexcaoOsIndeciesDeTextoEImagemNoIndiceDistribuido()
 			throws IOException, InterruptedException, KeeperException {
-		//Thread.sleep(1000);
 		indexaArquivos();
 	}
 	
-	//@Test
+	@Test
 	public void deveriaDevolverSuccessEAtualizarOsValoresDoDocumento() throws IOException, ParseException, KeeperException, InterruptedException {
+		//dado
 		String tituloAtualizado ="Alice's Adventures in Wonderland Revisado e Atualizado 2ª Ed"; 
 		Map<String, String> novosMetadados = new QueryMapBuilder()
 													.title(tituloAtualizado)
@@ -70,7 +70,11 @@ public class TextReplicationNodeTest {
 		Map<String, String> query = new QueryMapBuilder()
 											.title("Adventures")
 											.build();
-
+		
+		Map<String, String> queryAtualizado = new QueryMapBuilder()
+												.title("Atualizado")
+												.build();
+												
 		List<String> returnedFields = new ArrayList<String>();
 		returnedFields.add(Metadata.TITLE.getValue());
 		
@@ -82,43 +86,27 @@ public class TextReplicationNodeTest {
 		
 		ReturnMessage resultUpdate = textIndexerClient.updateText("1", novosMetadados);
 		
-		//entao
-		assertThat(beforeUpdate.getCodigo(), is(ReturnMessage.SUCCESS));
-		assertThat(theFirstTitleOfSearchResult(beforeUpdate),
-				is("Alice's Adventures in Wonderland"));
-		
-		assertThat(resultUpdate, is(ReturnMessage.SUCCESS));
-		}
-	
-	//@Test
-	public void deveriaDevolverSuccessEAtualizarOsValoresDoDocumento2() throws IOException, ParseException, KeeperException, InterruptedException {
-		//dado
-		String tituloAtualizado ="Alice's Adventures in Wonderland Revisado e Atualizado 2ª Ed"; 
-		
-		Map<String, String> queryAtualizado = new QueryMapBuilder()
-												.title("Atualizado")
-												.build();
-		List<String> returnedFields = new ArrayList<String>();
-		returnedFields.add(Metadata.TITLE.getValue());
-		
-		TextSearcher searcher = new TextSearcherClient();
-		
-		//quando
 		SearchResult afterUpdate = searcher.search(queryAtualizado, returnedFields, 0, 10, null);
 		
+		
 		//entao
+		assertThat(beforeUpdate.getCodigo(), is(ReturnMessage.SUCCESS));
+		assertThat(theFirstTitleOfSearchResult(beforeUpdate), is("Alice's Adventures in Wonderland"));
+		assertThat(resultUpdate, is(ReturnMessage.SUCCESS));
 		assertThat(afterUpdate.getCodigo(), is(ReturnMessage.SUCCESS));
-		assertThat(theFirstTitleOfSearchResult(afterUpdate),
-				is(tituloAtualizado));
-	}
+		assertThat(theFirstTitleOfSearchResult(afterUpdate), is(tituloAtualizado));
+		
+		
+		}
+
 	
-	//@Test
+	@Test
 	public void deveriaDeletarNoIndiceENoIndiceDasReplicasDeTexto()
 			throws IOException, InterruptedException, KeeperException {
 		TextIndexerClient textIndexerClient = new TextIndexerClient();
 		
-		ReturnMessage deletionReturnMessage = textIndexerClient.delText("3");
-		ReturnMessage deletioneturnMessage = textIndexerClient.delText("3");
+		ReturnMessage deletionReturnMessage = textIndexerClient.delText("2");
+		ReturnMessage deletioneturnMessage = textIndexerClient.delText("2");
 		assertThat(deletionReturnMessage, is(ReturnMessage.SUCCESS));
 		assertThat(deletioneturnMessage, is(ReturnMessage.ID_NOT_FOUND));
 	}
@@ -151,7 +139,7 @@ public class TextReplicationNodeTest {
 		MetaDocument metaDoc4 = new MetaDocumentBuilder().id("4")
 				.title("AMERICANA_M2_TXT_FILE").author("autor04").build();
 
-		//for(int i=0; i<80; i++)
+		
 		textIndexerClient.addText(metaDoc, conteudoDoArquivo(ALICE_TXT_FILE));
 		textIndexerClient.addText(metaDoc2, conteudoDoArquivo(OPALA_FILE));
 		textIndexerClient.addText(metaDoc3,	conteudoDoArquivo(AMERICA_M_TXT_FILE));

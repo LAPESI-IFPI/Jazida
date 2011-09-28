@@ -47,10 +47,19 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 
 	@Override
 	public long getProtocolVersion(String arg0, long arg1) throws IOException {
-		qtdResponding = node.getNodesResponding().size();
-		if(qtdResponding > 0){
-			searchers = new IndexSearcher[qtdResponding + 1];
-			createMultiSeacher();
+		int qtd = node.getNodesResponding().size();
+		if(qtdResponding != qtd){
+			qtdResponding = qtd;
+			if(qtdResponding > 0){
+				int cont = 0;
+				for(String hostName: node.getNodesResponding()){
+					if(new File(PathJazida.TEXT_INDEX_REPLY.getValue() + "/" + hostName).canRead()){ 
+						cont++;
+					}
+				}
+				searchers = new IndexSearcher[cont + 1];
+				createMultiSeacher();
+			}
 		}
 		return 0;
 	}
@@ -318,11 +327,13 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 		try {
 			int i = 0;
 			searchers[i] = new IndexSearcher(indexManager.getDirectory());
-			for (String hostName: node.getNodesResponding()){
+			
+			for (String hostName: node.getNodesResponding()){			
 				i++;
-				searchers[i] = new IndexSearcher(getDiretory(hostName));
+				searchers[i] = new IndexSearcher(getDiretory(hostName));			
 			}
 			multiSearcher = new ParallelMultiSearcher(searchers);
+			System.out.println(multiSearcher.maxDoc());
 		} catch (CorruptIndexException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -331,10 +342,10 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 		
 	}
 	
-	private Directory getDiretory(String hostname) throws IOException {
+	private Directory getDiretory(String hostname) throws IOException {		
 		String pathDir = PathJazida.TEXT_INDEX_REPLY.getValue();
 		Directory dir = FSDirectory.open(new File(pathDir + "/" + hostname));
-		return dir;
+		return dir ;		
 	}
 
 }

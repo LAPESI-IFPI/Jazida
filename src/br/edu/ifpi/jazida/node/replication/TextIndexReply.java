@@ -60,7 +60,7 @@ public class TextIndexReply {
 			writer.close();			
 		
 			if (numDocsIndex > numDocsReply){
-				LOG.info("Atualizando réplica do "+ hostname + "...");
+				LOG.info("Atualizando réplica do "+ hostname + ".");
 				//getDiretory(hostname).deleteFile("0_.cfs");
 				new SupportReplyText().startUpdateIndexReply(IP, getDiretory(hostname), HOSTNAME_LOCAL);
 				System.out.println("replica atualizada: metodo 1");
@@ -69,12 +69,12 @@ public class TextIndexReply {
 			
 			
 		} catch (CorruptIndexException e) {
-			LOG.info("Restaurando réplica de texto do "+ hostname + "...");
+			LOG.info("Restaurando réplica de texto do "+ hostname + ".");
 			Util.deleteDir(new File(pathDir+"/"+hostname));
 			new SupportReplyText().startRestoreIndexReply(IP, HOSTNAME_LOCAL);
 			return ReturnMessage.UNEXPECTED_INDEX_ERROR;
 		} catch (IOException e) {
-			LOG.info("Restaurando réplica de texto do "+ hostname + "...");
+			LOG.info("Restaurando réplica de texto do "+ hostname + ".");
 			Util.deleteDir(new File(pathDir+"/"+hostname));
 			new SupportReplyText().startRestoreIndexReply(IP, HOSTNAME_LOCAL);
 			return ReturnMessage.UNEXPECTED_INDEX_ERROR;
@@ -89,15 +89,16 @@ public class TextIndexReply {
 			IndexWriter writer = getIndexWriter(hostname);
 			writer.deleteDocuments(new Term(Metadata.ID.getValue(), id));
 			System.out.println("Deletou reply");
+			writer.optimize();
 			writer.close();			
 			return ReturnMessage.SUCCESS;
 		} catch (CorruptIndexException e) {
-			LOG.info("Restaurando réplica de texto do "+ hostname + "...");
+			LOG.info("Restaurando réplica de texto do "+ hostname + ".");
 			Util.deleteDir(new File(pathDir+"/"+hostname));
 			new SupportReplyText().startRestoreIndexReply(IP, HOSTNAME_LOCAL);
 			return ReturnMessage.UNEXPECTED_INDEX_ERROR;
 		} catch (IOException e) {
-			LOG.info("Restaurando réplica de texto do "+ hostname + "...");
+			LOG.info("Restaurando réplica de texto do "+ hostname + ".");
 			Util.deleteDir(new File(pathDir+"/"+hostname));
 			new SupportReplyText().startRestoreIndexReply(IP, HOSTNAME_LOCAL);
 			return ReturnMessage.UNEXPECTED_INDEX_ERROR;
@@ -120,17 +121,18 @@ public class TextIndexReply {
 
 			IndexWriter writer = getIndexWriter(hostname);
 			writer.updateDocument(term, doc);
+			writer.optimize();
 			System.out.println("Atualizou reply");
 			writer.close();
 			return ReturnMessage.SUCCESS;
 			
 		} catch (CorruptIndexException e) {
-			LOG.info("Restaurando réplica de texto do "+ hostname + "...");
+			LOG.info("Restaurando réplica de texto do "+ hostname + ".");
 			Util.deleteDir(new File(pathDir+"/"+hostname));
 			new SupportReplyText().startRestoreIndexReply(IP, HOSTNAME_LOCAL);
 			return ReturnMessage.UNEXPECTED_INDEX_ERROR;
 		} catch (IOException e) {
-			LOG.info("Restaurando réplica de texto do "+ hostname + "...");
+			LOG.info("Restaurando réplica de texto do "+ hostname + ".");
 			Util.deleteDir(new File(pathDir+"/"+hostname));
 			new SupportReplyText().startRestoreIndexReply(IP, HOSTNAME_LOCAL);
 			return ReturnMessage.UNEXPECTED_INDEX_ERROR;

@@ -43,7 +43,7 @@ public class SupportReplyImage {
 		return null;
 	}
 	
-	public void startUpdateIndexReply(String IP_REMOTE, Directory directory, String HOSTNAME_LOCAL) throws IOException{
+	public void startUpdateIndexReply(String ipRemote, Directory directory, String hostNameLocal) throws IOException{
 		int size = directory.listAll().length;
 		String[] array = new String[size];
 		Text[] fileNames = new Text[size];
@@ -56,43 +56,43 @@ public class SupportReplyImage {
 		}		
 		
 		try{
-			ISupportIndexImageProtocol supportProxy = getSupportIndexImageProtocol(new InetSocketAddress(IP_REMOTE, PORTA));
-			supportProxy.loadData(fileNames, new Text(IP_LOCAL), new Text(HOSTNAME_LOCAL));
+			ISupportIndexImageProtocol supportProxy = getSupportIndexImageProtocol(new InetSocketAddress(ipRemote, PORTA));
+			supportProxy.loadData(fileNames, new Text(IP_LOCAL), new Text(hostNameLocal));
 		}catch (Throwable e){
 			LOG.error(e);
 		}
 	}
 	
 	
-	public void updateIndexReply(String[] fileNames, String IP_REMOTE, String HOSTNAME, String HOSTNAME_REMOTE) throws IOException {
+	public void updateIndexReply(String[] fileNames, String ipRemote, String hostName, String hostNameRemote) throws IOException {
 		try{
-			UpdateReplyWritable update = new UpdateReplyWritable(fileNames, HOSTNAME, PATH_INDEX, PATH_REPLY);
-			ISupportIndexImageProtocol supportProxy = getSupportIndexImageProtocol(new InetSocketAddress(IP_REMOTE, PORTA));
+			UpdateReplyWritable update = new UpdateReplyWritable(fileNames, hostName, PATH_INDEX, PATH_REPLY);
+			ISupportIndexImageProtocol supportProxy = getSupportIndexImageProtocol(new InetSocketAddress(ipRemote, PORTA));
 		
 			IntWritable result = supportProxy.finishUpdate(update);
-			LOG.info("A atualização da réplica no "+ HOSTNAME_REMOTE + " retornou: " +ReturnMessage.getReturnMessage(result.get()));
+			LOG.info("A atualização da réplica no "+ hostNameRemote + " retornou: " +ReturnMessage.getReturnMessage(result.get()));
 		}catch (Throwable e){
 			LOG.error(e);
 		}
 	}
 	
-	public void startRestoreIndexReply(String IP_REMOTE, String HOSTNAME_LOCAL) throws IOException {
+	public void startRestoreIndexReply(String ipRemote, String hostNameLocal) throws IOException {
 		try{
-			ISupportIndexImageProtocol supportProxy = getSupportIndexImageProtocol(new InetSocketAddress(IP_REMOTE, PORTA));
-			supportProxy.restoreIndexReply(new Text(IP_LOCAL), new Text(HOSTNAME_LOCAL));
+			ISupportIndexImageProtocol supportProxy = getSupportIndexImageProtocol(new InetSocketAddress(ipRemote, PORTA));
+			supportProxy.restoreIndexReply(new Text(IP_LOCAL), new Text(hostNameLocal));
 		}catch (Throwable e){
 			LOG.error(e);
 		}
 	}
 	
 	
-	public void restoreIndexReply(Directory dir, String IP_REMOTE, String HOSTNAME, String HOSTNAME_REMOTE) throws IOException {
+	public void restoreIndexReply(Directory dir, String ipRemote, String hostName, String hostNameRemote) throws IOException {
 		try{
-			RestoreReplyWritable restore = new RestoreReplyWritable(dir, HOSTNAME, PATH_REPLY);
-			ISupportIndexImageProtocol supportProxy = getSupportIndexImageProtocol(new InetSocketAddress(IP_REMOTE, PORTA));
+			RestoreReplyWritable restore = new RestoreReplyWritable(dir, hostName, PATH_REPLY);
+			ISupportIndexImageProtocol supportProxy = getSupportIndexImageProtocol(new InetSocketAddress(ipRemote, PORTA));
 		
 			IntWritable result = supportProxy.finishRestore(restore);
-			LOG.info("A restauração da réplica no "+ HOSTNAME_REMOTE + " retornou: " +ReturnMessage.getReturnMessage(result.get()));
+			LOG.info("A restauração da réplica no "+ hostNameRemote + " retornou: " +ReturnMessage.getReturnMessage(result.get()));
 		}catch (Throwable e){
 			LOG.error(e);
 		}

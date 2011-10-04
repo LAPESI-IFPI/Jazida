@@ -6,11 +6,13 @@ import java.io.IOException;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 import br.edu.ifpi.jazida.node.replication.SupportReplyText;
 import br.edu.ifpi.jazida.util.DataNodeConf;
+import br.edu.ifpi.jazida.util.ReturneMessageJazida;
 import br.edu.ifpi.jazida.writable.RestoreReplyWritable;
 import br.edu.ifpi.jazida.writable.UpdateReplyWritable;
 import br.edu.ifpi.opala.utils.Path;
@@ -27,7 +29,7 @@ public class SupportIndexTextProtocol implements ISupportIndexTextProtocol {
 	}
 
 	@Override
-	public void loadData(Text[] fileNames, Text IP_REMOTE, Text HOSTNAME_REMOTE) {
+	public void loadData(Text[] fileNames, Text ipRemote, Text hostNameRemote) {
 		String[] arrayFileNames = new String[fileNames.length];
 
 		int i = 0;
@@ -36,18 +38,19 @@ public class SupportIndexTextProtocol implements ISupportIndexTextProtocol {
 			i++;
 		}
 
-		updateIndexReply(arrayFileNames, IP_REMOTE.toString(), HOSTNAME, HOSTNAME_REMOTE.toString());
+		updateIndexReply(arrayFileNames, ipRemote.toString(), HOSTNAME, hostNameRemote.toString());
 	}
 
 	@Override
-	public void updateIndexReply(String[] arrayFileNames, String IP_REMOTE, String HOSTNAME, String HOSTNAME_REMOTE) {
+	public void updateIndexReply(String[] arrayFileNames, String ipRemote, String hostName, String hostNameRemote) {
 		try {
 			
-			LOG.info("Atualizando réplica de texto no " + HOSTNAME_REMOTE + " ...");
-			new SupportReplyText().updateIndexReply(arrayFileNames, IP_REMOTE, HOSTNAME, HOSTNAME_REMOTE);
+			LOG.info("Atualizando réplica de texto no " + hostNameRemote + " ...");
+			new SupportReplyText().updateIndexReply(arrayFileNames, ipRemote, hostName, hostNameRemote);
 
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOG.error("Falha no metodo: updateIndexReply() Protocol");
+			LOG.error(e);
 		}
 	}
 	
@@ -59,15 +62,16 @@ public class SupportIndexTextProtocol implements ISupportIndexTextProtocol {
 	}
 
 	@Override
-	public void restoreIndexReply(Text IP_REMOTE, Text HOSTNAME_REMOTE) {
+	public void restoreIndexReply(Text ipRemote, Text hostNameRemote) {
 		Directory directory;
 		try {
-			LOG.info("Restaurando réplica de texto no " + HOSTNAME_REMOTE + " ...");			
+			LOG.info("Restaurando réplica de texto no " + hostNameRemote + " ...");			
 			directory = FSDirectory.open(new File(Path.TEXT_BACKUP.getValue()));
-			new SupportReplyText().restoreIndexReply(directory, IP_REMOTE.toString(), HOSTNAME.toString(), HOSTNAME_REMOTE.toString());
+			new SupportReplyText().restoreIndexReply(directory, ipRemote.toString(), HOSTNAME.toString(), hostNameRemote.toString());
 
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOG.error("Falha no metodo: restoreIndexReply() Protocol");
+			LOG.error(e);
 		}
 				
 	}
@@ -75,8 +79,35 @@ public class SupportIndexTextProtocol implements ISupportIndexTextProtocol {
 	@Override
 	public IntWritable finishRestore(RestoreReplyWritable restore) {
 		String hostName = restore.getHostName();
-		LOG.info("Restautaração da réplica do " + hostName + " finalizada.");
+		LOG.info("Restautaração da réplica de texto do " + hostName + " finalizada.");
 		return new IntWritable(ReturnMessage.SUCCESS.code);
+	}
+
+	@Override
+	public IntWritable checkIndexText(IntWritable numDocsReply) {
+		try{
+		Directory dir = getDiretory(HOSTNAME);
+		IndexReader reader = IndexReader.open(dir);
+		if (numDocsReply.get() != reader.numDocs()){
+			reader.close();
+			return new IntWritable(ReturneMessageJazida.REPLY_OUTDATED.code);
+		}		
+		else {
+			reader.close();
+			return new IntWritable(ReturneMessageJazida.REPLY_UPDATED.code);
+		}
+		
+		} catch (Exception e) {
+			LOG.error("Falha no metodo: checkIndexText() Protocol");
+			LOG.error(e);
+		}
+		return null;
+	}
+	
+	private Directory getDiretory(String hostName) throws IOException {
+		String pathDir = Path.TEXT_INDEX.getValue();
+		Directory dir = FSDirectory.open(new File(pathDir));
+		return dir;
 	}
 
 }

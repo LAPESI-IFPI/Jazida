@@ -30,6 +30,8 @@ public class ClusterService implements Watcher, VoidCallback {
 	private CountDownLatch connectedSignal = new CountDownLatch(1);
 	private NodeStatus node;
 	
+	public ClusterService(){}
+	
 	public ClusterService(NodeStatus node)
 			throws KeeperException, InterruptedException, IOException {
 		this.node = node;
@@ -75,24 +77,24 @@ public class ClusterService implements Watcher, VoidCallback {
 		}
 	}
 	
-//	private void registerHistoricClusterService(String hostName) {
-//		try {
-//			
-//			if (zk.exists(ZkConf.HISTORIC_PATH, false) == null) {
-//				zk.create(ZkConf.HISTORIC_PATH, null, Ids.OPEN_ACL_UNSAFE,
-//						CreateMode.PERSISTENT);
-//			}
-//			String pathHistoric = ZkConf.HISTORIC_PATH + "/" + hostName;
-//			if((zk.exists(pathHistoric, false) == null)) {
-//				zk.create(pathHistoric, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-//			}
-//			
-//		} catch (KeeperException e) {
-//			LOG.error(e);
-//		} catch (InterruptedException e) {
-//			LOG.error(e);
-//		}
-//	}
+	public void registerNodesDisconnectedClusterService(String hostName) {
+		try {
+			
+			if (zk.exists(ZkConf.HISTORIC_PATH, false) == null) {
+				zk.create(ZkConf.HISTORIC_PATH, null, Ids.OPEN_ACL_UNSAFE,
+						CreateMode.PERSISTENT);
+			}
+			String pathHistoric = ZkConf.HISTORIC_PATH + "/" + hostName;
+			if((zk.exists(pathHistoric, false) == null)) {
+				zk.create(pathHistoric, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+			}
+			
+		} catch (KeeperException e) {
+			LOG.error(e);
+		} catch (InterruptedException e) {
+			LOG.error(e);
+		}
+	}
 	
 
 	@Override
@@ -122,12 +124,10 @@ public class ClusterService implements Watcher, VoidCallback {
 		} else {		
 			switch (event.getType()) {
 			case NodeCreated:
-				LOG.info("Um datanode conectou-se do cluster.");
 				zk.sync(path, this, null);
 				break;
 	
 			case NodeDeleted:
-				LOG.info("Um datanode desconectou-se do cluster.");
 				zk.sync(path, this, null);
 				break;
 			
@@ -144,50 +144,28 @@ public class ClusterService implements Watcher, VoidCallback {
 
 	@Override
 	public void processResult(int rc, String path, Object ctx) {
-		try {
-			int begin = path.lastIndexOf("/");
-			int end = path.length();
-			String hostName = path.substring(begin + 1, end);
-			
-//			if(path.equals(ZkConf.HISTORIC_PATH)){
-//				ListsManager.loadMemoryHistoricNodes();
-//			} else {
-			if((zk.exists(path, true) == null)) {
-				LOG.info("Datanode que se desconectou: " + hostName);
-				ListsManager.managerNodesDeleted(hostName, node);
-			} else {
-				LOG.info("Datanode que se conectou: " + hostName);
-				ListsManager.managerNodesConnected(hostName, node);
+		try {			
+			if(!path.contains(ZkConf.HISTORIC_PATH)){
+				int begin = path.lastIndexOf("/");
+				int end = path.length();
+				String hostName = path.substring(begin + 1, end);
+				
+				if((zk.exists(path, true) == null)) {
+					LOG.info("Um datanode desconectou-se do cluster.");
+					LOG.info("Datanode que se desconectou: " + hostName);
+					ListsManager.managerNodesDeleted(hostName, node);
+				} else {
+					LOG.info("Datanode que se conectou: " + hostName);
+					ListsManager.managerNodesConnected(hostName, node);
+				}
 			}
-			//}
 				
 		} catch (KeeperException e) {
 			LOG.error(e);
 		} catch (InterruptedException e) {
 			LOG.error(e);
 		}
-	}
-	
-	
-	
-//	public static List<String> getHistoricDataNodes() {
-//		List<String> hostNames = new ArrayList<String>();
-//		
-//		try {
-//			List<String> historicIds = zk.getChildren(ZkConf.HISTORIC_PATH, false);
-//			
-//			for (String hostName : historicIds) {
-//				hostNames.add(hostName);
-//			}
-//		} catch (KeeperException e) {
-//			LOG.error(e.getMessage(), e);
-//		} catch (InterruptedException e) {
-//			LOG.error(e.getMessage(), e);
-//		} 
-//		
-//		return hostNames;
-//	}
-	
+	}	
 	
 	public static void disconnect() throws InterruptedException {
 		LOG.info("Desconectando-se ao Zookeeper...");

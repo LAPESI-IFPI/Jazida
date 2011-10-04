@@ -6,11 +6,13 @@ import java.io.IOException;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 import br.edu.ifpi.jazida.node.replication.SupportReplyImage;
 import br.edu.ifpi.jazida.util.DataNodeConf;
+import br.edu.ifpi.jazida.util.ReturneMessageJazida;
 import br.edu.ifpi.jazida.writable.RestoreReplyWritable;
 import br.edu.ifpi.jazida.writable.UpdateReplyWritable;
 import br.edu.ifpi.opala.utils.Path;
@@ -18,7 +20,7 @@ import br.edu.ifpi.opala.utils.ReturnMessage;
 
 public class SupportIndexImageProtocol implements ISupportIndexImageProtocol {
 	
-	private static final Logger LOG = Logger.getLogger(SupportReplyImage.class);
+	private static final Logger LOG = Logger.getLogger(SupportIndexImageProtocol.class);
 	private String HOSTNAME = DataNodeConf.DATANODE_HOSTNAME;
 	
 	@Override
@@ -27,7 +29,7 @@ public class SupportIndexImageProtocol implements ISupportIndexImageProtocol {
 	}
 
 	@Override
-	public void loadData(Text[] fileNames, Text IP_REMOTE, Text HOSTNAME_REMOTE) {
+	public void loadData(Text[] fileNames, Text ipRemote, Text hostNameRemote) {
 		String[] arrayFileNames = new String[fileNames.length];
 
 		int i = 0;
@@ -36,17 +38,18 @@ public class SupportIndexImageProtocol implements ISupportIndexImageProtocol {
 			i++;
 		}
 
-		updateIndexReply(arrayFileNames, IP_REMOTE.toString(), HOSTNAME, HOSTNAME_REMOTE.toString());
+		updateIndexReply(arrayFileNames, ipRemote.toString(), HOSTNAME, hostNameRemote.toString());
 	}
 
 	@Override
-	public void updateIndexReply(String[] arrayFileNames, String IP_REMOTE, String HOSTNAME, String HOSTNAME_REMOTE) {
+	public void updateIndexReply(String[] arrayFileNames, String ipRemote, String hostName, String hostNameRemote) {
 		try {
-			LOG.info("Atualizando réplica de imagem no " + HOSTNAME_REMOTE + " ...");			
-			new SupportReplyImage().updateIndexReply(arrayFileNames, IP_REMOTE, HOSTNAME, HOSTNAME_REMOTE);
+			LOG.info("Atualizando réplica de imagem no " + hostNameRemote + " ...");			
+			new SupportReplyImage().updateIndexReply(arrayFileNames, ipRemote, hostName, hostNameRemote);
 
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOG.error("Falha no metodo: updateIndexReply() Protocol");
+			LOG.error(e);
 		}
 	}
 	
@@ -58,16 +61,17 @@ public class SupportIndexImageProtocol implements ISupportIndexImageProtocol {
 	}
 
 	@Override
-	public void restoreIndexReply(Text IP_REMOTE, Text HOSTNAME_REMOTE) {
+	public void restoreIndexReply(Text ipRemote, Text hostNameRemote) {
 		Directory directory;
 		try {
 			
-			LOG.info("Restaurando réplica de imagem no " + HOSTNAME_REMOTE + " ...");			
+			LOG.info("Restaurando réplica de imagem no " + hostNameRemote + " ...");			
 			directory = FSDirectory.open(new File(Path.IMAGE_BACKUP.getValue()));
-			new SupportReplyImage().restoreIndexReply(directory, IP_REMOTE.toString(), HOSTNAME.toString(), HOSTNAME_REMOTE.toString());
+			new SupportReplyImage().restoreIndexReply(directory, ipRemote.toString(), HOSTNAME.toString(), hostNameRemote.toString());
 
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOG.error("Falha no metodo: restoreIndexReply() Protocol");
+			LOG.error(e);
 		}
 				
 	}
@@ -75,8 +79,36 @@ public class SupportIndexImageProtocol implements ISupportIndexImageProtocol {
 	@Override
 	public IntWritable finishRestore(RestoreReplyWritable restore) {
 		String hostName = restore.getHostName();
-		LOG.info("Restautaração da réplica do " + hostName + " finalizada.");
+		LOG.info("Restautaração da réplica de imagem do " + hostName + " finalizada.");
 		return new IntWritable(ReturnMessage.SUCCESS.code);
 	}
+
+	@Override
+	public IntWritable checkIndexImage(IntWritable numDocsReply) {
+		try{
+			Directory dir = getDiretory(HOSTNAME);
+			IndexReader reader = IndexReader.open(dir);
+			if (numDocsReply.get() != reader.numDocs()){
+				reader.close();
+				return new IntWritable(ReturneMessageJazida.REPLY_OUTDATED.code);
+			}		
+			else {
+				reader.close();
+				return new IntWritable(ReturneMessageJazida.REPLY_UPDATED.code);
+			}
+			
+			} catch (Exception e) {
+				LOG.error(e);
+			} catch (Throwable e) {
+				LOG.error("Falha no metodo: checkIndexImage() Protocol");
+			}
+			return null;
+		}
+		
+		private Directory getDiretory(String hostName) throws IOException {
+			String pathDir = Path.IMAGE_INDEX.getValue();
+			Directory dir = FSDirectory.open(new File(pathDir));
+			return dir;
+		}
 
 }

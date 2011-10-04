@@ -15,4 +15,5 @@ public interface ISupportIndexImageProtocol extends VersionedProtocol{
 	public IntWritable finishUpdate(UpdateReplyWritable update);
 	public void restoreIndexReply(Text IP_REMOTE, Text HOSTNAME_REMOTE);
 	public IntWritable finishRestore(RestoreReplyWritable restore);
+	public IntWritable checkIndexImage(IntWritable numDocsReply);
 }

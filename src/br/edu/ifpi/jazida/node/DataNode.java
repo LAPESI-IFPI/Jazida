@@ -144,7 +144,9 @@ public class DataNode {
 		
 		LOG.info("Iniciando o protocolo de RPC ImageIndexerServer");
 		File imageIndexPath = new File(Path.IMAGE_INDEX.getValue());
+		File imageBackupPath = new File(Path.IMAGE_BACKUP.getValue());
 		createIndexIfNotExists(imageIndexPath);
+		createIndexIfNotExists(imageBackupPath);
 		
 		imageIndexerServer = new RPCServer(new ImageIndexerProtocol(),
 													node.getAddress(),

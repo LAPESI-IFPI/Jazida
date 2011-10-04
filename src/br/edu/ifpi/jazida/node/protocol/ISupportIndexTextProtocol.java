@@ -15,4 +15,5 @@ public interface ISupportIndexTextProtocol extends VersionedProtocol{
 	public IntWritable finishUpdate(UpdateReplyWritable update);
 	public void restoreIndexReply(Text IP_REMOTE, Text HOSTNAME_REMOTE);
 	public IntWritable finishRestore(RestoreReplyWritable restore);
+	public IntWritable checkIndexText(IntWritable numDocsReply);
 }

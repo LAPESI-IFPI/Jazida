@@ -70,7 +70,7 @@ public class ImageReplicationNodeTest {
 		 indexaImagens();
 	}
 
-	//@Test
+	@Test
 	public void deveriaDevolverSuccessEAtualizarOsValoresDoDocumento()
 			throws IOException, ParseException, KeeperException,
 			InterruptedException {
@@ -96,7 +96,7 @@ public class ImageReplicationNodeTest {
 		return beforeUpdate.getItem(0).getField(Metadata.TITLE.getValue());
 	}
 	
-	//@Test
+	@Test
 	public void deveriaDeletarNoIndiceENoIndiceDasReplicasDeTexto()
 			throws IOException, InterruptedException, KeeperException {
 		ImageIndexerClient imageIndexerClient = new ImageIndexerClient();

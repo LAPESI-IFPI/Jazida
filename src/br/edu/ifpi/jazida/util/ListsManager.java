@@ -12,8 +12,11 @@ import org.apache.zookeeper.ZooKeeper;
 
 import br.edu.ifpi.jazida.client.PartitionPolicy;
 import br.edu.ifpi.jazida.client.RoundRobinPartitionPolicy;
+import br.edu.ifpi.jazida.cluster.ClusterService;
 import br.edu.ifpi.jazida.node.DataNode;
 import br.edu.ifpi.jazida.node.NodeStatus;
+import br.edu.ifpi.jazida.node.replication.SupportReplyImage;
+import br.edu.ifpi.jazida.node.replication.SupportReplyText;
 
 public class ListsManager {
 	private static final Logger LOG = Logger.getLogger(ListsManager.class);
@@ -22,11 +25,10 @@ public class ListsManager {
 	private static ZooKeeper zk;
 	private static PartitionPolicy<NodeStatus> partitionPolicy = new RoundRobinPartitionPolicy();
 	private static List<NodeStatus> nodesConnected = new ArrayList<NodeStatus>();
-	private static List<String> nodesDesconnected = new ArrayList<String>();
 	private static List<NodeStatus> nodesReplySend = new ArrayList<NodeStatus>();
 	private static Map<Integer, NodeStatus> mapReplyUtil = new HashMap<Integer, NodeStatus>();
 	private static Map<Integer, NodeStatus> cacheMapReplyUtil = new HashMap<Integer, NodeStatus>();
-	private static List<String> nodesReplyReceive = new ArrayList<String>();
+	private static List<NodeStatus> nodesReplyReceive = new ArrayList<NodeStatus>();
 	private static List<String> cacheNodesReplyReceive = new ArrayList<String>();
 	private static Map<String, List<String>> managerNodesResponding = new HashMap<String, List<String>>();
 	private static Map<String, List<String>> historicSendNodesDesconnected = new HashMap<String, List<String>>();
@@ -82,7 +84,7 @@ public class ListsManager {
 					node = mapReplyUtil.get(idNode);
 					
 				if(node != null ) 
-					nodesReplyReceive.add(node.getHostname());
+					nodesReplyReceive.add(node);
 			}
 		}
 	}
@@ -116,11 +118,15 @@ public class ListsManager {
 			cacheMapReplyUtil.clear();
 		}
 		cacheMapReplyUtil.putAll(mapReplyUtil);
+		
 		cacheReplyFrequency = replyFrequency;
+		
 		if(!cacheNodesReplyReceive.isEmpty()){ 
 			cacheNodesReplyReceive.clear();
-		}
-		cacheNodesReplyReceive.addAll(nodesReplyReceive);
+		}		
+		for(NodeStatus node: nodesReplyReceive){
+			cacheNodesReplyReceive.add(node.getHostname());
+		}		
 	}
 	
 	public static void manager(){
@@ -134,8 +140,10 @@ public class ListsManager {
 	public synchronized static void managerNodesDeleted(String hostNameDesc, NodeStatus nodeLocal) {
 		try{
 			String path;
-
-			nodesDesconnected.add(hostNameDesc);
+			if(getIdDatanode(HOSTNAME) == idFirstNode || getIdDatanode(HOSTNAME) == idLastNode){
+				new ClusterService().registerNodesDisconnectedClusterService(hostNameDesc);
+				System.out.println(zk.getChildren(ZkConf.HISTORIC_PATH, true));
+			}
 			List<String> listSend = getListNodeSendReply(hostNameDesc);
 			historicSendNodesDesconnected.put(hostNameDesc, listSend);
 			
@@ -219,7 +227,7 @@ public class ListsManager {
 						}
 					}
 					
-					Thread.sleep(1500);
+					Thread.sleep(3500);
 					nodesExists.clear();					
 					
 					List<String> listNodesResponding = managerNodesResponding.get(hostNameDesc);
@@ -275,6 +283,9 @@ public class ListsManager {
 			LOG.error(e);
 		} catch (ClassNotFoundException e) {
 			LOG.error(e);
+		} catch (KeeperException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 	
@@ -308,25 +319,37 @@ public class ListsManager {
 	public synchronized static void managerNodesConnected(String hostName, NodeStatus node) {
 		try{
 			String path = ZkConf.DATANODES_PATH + "/" + HOSTNAME;
+			String pathNodesDesconnected = ZkConf.HISTORIC_PATH + "/" + hostName;
+			List<String> nodesDesconnected = new ArrayList<String>();
+			nodesDesconnected = getDataNodesDisconnected();
 			
 			if(nodesDesconnected.contains(hostName)){
+				if(hostName.equals(HOSTNAME)){
+					if(zk.exists(pathNodesDesconnected, true) != null)
+						zk.delete(pathNodesDesconnected, -1);
+					
+					System.out.println("getDataNodesDisconnected: " +nodesDesconnected);
+				}
+				
 				if (historicSendNodesDesconnected.containsKey(hostName))
 					historicSendNodesDesconnected.remove(hostName);
 				
 				if(node.getNodesResponding().contains(hostName)){
-					nodesDesconnected.remove(nodesDesconnected.indexOf(hostName));
 					node.getNodesResponding().remove(node.getNodesResponding().indexOf(hostName));
 					System.out.println("node resp.: " + node.getNodesResponding());
-					zk.setData(path, Serializer.fromObject(node), -1);
-					
-				} else{
-					nodesDesconnected.remove(nodesDesconnected.indexOf(hostName));
+					zk.setData(path, Serializer.fromObject(node), -1);					
 				}
 				
 				System.out.println("nodesDesconnected: " + nodesDesconnected);
-				System.out.println("nodeLocal respondendo: " + node.getNodesResponding());			
+				System.out.println("nodeLocal respondendo: " + node.getNodesResponding());
 				
-			}
+				Thread.sleep(2000);
+				if(hostName.equals(HOSTNAME)){
+					System.out.println("nodesReplyReceive: " +nodesReplyReceive);
+					new SupportReplyText().checkRepliesText(nodesReplyReceive);
+					new SupportReplyImage().checkRepliesImage(nodesReplyReceive);
+				}
+			} 
 		
 		} catch (KeeperException e) {
 			LOG.error(e);
@@ -395,6 +418,23 @@ public class ListsManager {
 		return datanodes;
 	}
 	
+	public static List<String> getDataNodesDisconnected() {
+		List<String> hostNames = new ArrayList<String>();
+		
+		try {
+			List<String> historicIds = zk.getChildren(ZkConf.HISTORIC_PATH, false);
+			for (String hostName : historicIds) {
+				hostNames.add(hostName);
+			}
+		} catch (KeeperException e) {
+			LOG.error(e.getMessage(), e);
+		} catch (InterruptedException e) {
+			LOG.error(e.getMessage(), e);
+		} 
+	
+		return hostNames;
+	}
+	
 	private static List<String> getListNodeSendReply(String hostName){
 		List<String> nodes = new ArrayList<String>();
 		
@@ -424,6 +464,8 @@ public class ListsManager {
 		int id = Integer.valueOf(identificador);
 		return id;
 	}
+	
+
 //	public static void loadNodesDisconneted() {
 //		boolean exists = false;
 //		for(String hostName: nodesReplyReceive){

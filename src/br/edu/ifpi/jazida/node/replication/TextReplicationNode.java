@@ -88,7 +88,7 @@ public class TextReplicationNode {
 				ArrayList<Future<IntWritable>> requests = new ArrayList<Future<IntWritable>>();
 				LOG.info("Enviando o documento para os índices das Réplicas...");
 				for (final NodeStatus nodeStatus : datanodes) {
-						LOG.info("Enviando para: " + nodeStatus);
+						LOG.info("Enviando para: " + nodeStatus.getHostname());
 						Future<IntWritable> request = threadPool.submit(new Callable<IntWritable>() {
 							@Override
 							public IntWritable call() throws Exception {
@@ -124,7 +124,7 @@ public class TextReplicationNode {
 				ArrayList<Future<IntWritable>> requests = new ArrayList<Future<IntWritable>>();
 				LOG.info("Deletando o documento nos índices das Réplicas...");
 				for (final NodeStatus nodeStatus : datanodes) {
-					LOG.info("Enviando para: " + nodeStatus);
+					LOG.info("Enviando para: " + nodeStatus.getHostname());
 					Future<IntWritable> request = threadPool.submit(new Callable<IntWritable>() {
 						@Override
 						public IntWritable call() throws Exception {
@@ -161,7 +161,7 @@ public class TextReplicationNode {
 				ArrayList<Future<IntWritable>> requests = new ArrayList<Future<IntWritable>>();
 				LOG.info("Atualizando o documento nos índices das Réplicas...");
 				for (final NodeStatus nodeStatus : datanodes) {
-					LOG.info("Enviando para: " + nodeStatus);
+					LOG.info("Enviando para: " + nodeStatus.getHostname());
 					Future<IntWritable> request = threadPool.submit(new Callable<IntWritable>() {
 							@Override
 							public IntWritable call() throws Exception {

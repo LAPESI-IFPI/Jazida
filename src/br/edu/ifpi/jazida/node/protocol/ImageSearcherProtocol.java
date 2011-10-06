@@ -58,10 +58,6 @@ public class ImageSearcherProtocol implements IImageSearchProtocol {
 	
 	@Override
 	public long getProtocolVersion(String arg0, long arg1) throws IOException {
-		if( node.getNodesResponding().size() <= 0){
-			 node.getNodesResponding().add("host_2");
-			 node.getNodesResponding().add("host_3");
-		}
 		int qtd = node.getNodesResponding().size();
 		if(qtdResponding != qtd){
 			qtdResponding = qtd;
@@ -177,7 +173,7 @@ public class ImageSearcherProtocol implements IImageSearchProtocol {
 			}
 		}catch (IOException e) {
 			LOG.error("Falha em TextSearchableProtocol.close()");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 	}
 	
@@ -196,10 +192,10 @@ public class ImageSearcherProtocol implements IImageSearchProtocol {
 			}
 		} catch (CorruptIndexException e) {
 			LOG.error("Falha em TextSearchableProtocol.doc(IntWritable)");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (IOException e) {
 			LOG.error("Falha em TextSearchableProtocol.doc(IntWritable)");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 		return null;
 	}
@@ -221,7 +217,7 @@ public class ImageSearcherProtocol implements IImageSearchProtocol {
 			}
 		} catch (Exception e) {
 			LOG.error("Falha em TextSearchableProtocol.doc(IntWritable, FieldSelector)");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		};
 		return null;
 	}
@@ -241,7 +237,7 @@ public class ImageSearcherProtocol implements IImageSearchProtocol {
 			}
 		} catch (IOException e) {
 			LOG.error("Falha em TextSearchableProtocol.docFreqs(TermWritable[])");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 		return null;
 	}
@@ -294,7 +290,7 @@ public class ImageSearcherProtocol implements IImageSearchProtocol {
 			}
 		} catch (IOException e) {
 			LOG.error("Falha TextSearchableProtocol.docFreqs(TermWritable[])");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 			return null;
 		}
 	}
@@ -314,7 +310,7 @@ public class ImageSearcherProtocol implements IImageSearchProtocol {
 			}
 		} catch (IOException e) {
 			LOG.error("Falha TextSearchableProtocol.explain()");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 			return null;
 		}
 	}
@@ -334,7 +330,7 @@ public class ImageSearcherProtocol implements IImageSearchProtocol {
 			}
 		} catch (IOException e) {
 			LOG.error("Falha em TextSearchableProtocol.maxDoc()");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 			return null;
 		}
 	}
@@ -354,7 +350,7 @@ public class ImageSearcherProtocol implements IImageSearchProtocol {
 			}
 		} catch (IOException e) {
 			LOG.error("Falha em TextSearchableProtocol.rewrite(QueryWritable)");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 			return null;
 		}
 	}
@@ -387,7 +383,7 @@ public class ImageSearcherProtocol implements IImageSearchProtocol {
 			}
 		} catch (IOException e) {
 			LOG.error("Falha em TextSearchableProtocol.search()");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 			return null;
 		}
 	}
@@ -419,7 +415,7 @@ public class ImageSearcherProtocol implements IImageSearchProtocol {
 			}
 		} catch (IOException e) {
 			LOG.error("Falha em TextSearchableProtocol.search(WeightWritable,FilterWritable,IntWritable,SortWritabl)");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 			return null;
 		}
 	}

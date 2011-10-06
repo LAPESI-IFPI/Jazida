@@ -80,7 +80,7 @@ public class SupportReplyText {
 			supportProxy.loadData(fileNames, new Text(IP_LOCAL), new Text(hostNameLocal));
 		}catch (Throwable e){
 			LOG.error("Falha no metodo: startUpdateIndexReply()");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 	}
 	
@@ -94,7 +94,7 @@ public class SupportReplyText {
 			LOG.info("A atualização da réplica no "+ hostNameRemote + " retornou: " +ReturnMessage.getReturnMessage(result.get()));
 		}catch (Throwable e){
 			LOG.error("Falha no metodo: updateIndexReply()");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 	}
 	
@@ -104,7 +104,7 @@ public class SupportReplyText {
 			supportProxy.restoreIndexReply(new Text(IP_LOCAL), new Text(hostNameLocal));
 		}catch (Throwable e){
 			LOG.error("Falha no metodo: startRestoreIndexReply()");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 	}
 	
@@ -118,7 +118,7 @@ public class SupportReplyText {
 			LOG.info("A restauração da réplica no "+ hostNameRemote + " retornou: " +ReturnMessage.getReturnMessage(result.get()));
 		}catch (Throwable e){
 			LOG.error("Falha no metodo: restoreIndexReply()");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 	}
 	
@@ -171,18 +171,18 @@ public class SupportReplyText {
 				
 			
 			} catch (InterruptedException e) {
-				LOG.error(e);
+				LOG.error(e.fillInStackTrace(), e);
 			} catch (ExecutionException e) {
-				LOG.error(e);
+				LOG.error(e.fillInStackTrace(), e);
 			} catch (TimeoutException e) {
-				LOG.error(e);
+				LOG.error(e.fillInStackTrace(), e);
 			} catch (Throwable e){
-				LOG.error(e);
+				LOG.error(e.fillInStackTrace(), e);
 			}
 			
 		}catch (Throwable e) {
 			LOG.error("Falha no metodo: checkRepliesText()");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 	}
 	

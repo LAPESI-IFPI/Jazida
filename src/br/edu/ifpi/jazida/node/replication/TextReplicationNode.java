@@ -109,11 +109,11 @@ public class TextReplicationNode {
 				}					
 			}
 		} catch (InterruptedException e) {
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (ExecutionException e) {
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (Throwable e){
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 	}
 
@@ -143,13 +143,13 @@ public class TextReplicationNode {
 			}
 		
 		} catch (InterruptedException e) {
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (ExecutionException e) {
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (TimeoutException e) {
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (Throwable e){
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 		
 	}
@@ -180,13 +180,13 @@ public class TextReplicationNode {
 			}
 		
 		} catch (InterruptedException e) {
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (ExecutionException e) {
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (TimeoutException e) {
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (Throwable e){
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 		
 	}

@@ -76,7 +76,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 			}
 		}catch (IOException e) {
 			LOG.error("Falha em TextSearchableProtocol.close()");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 	}
 	
@@ -95,10 +95,10 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 			}
 		} catch (CorruptIndexException e) {
 			LOG.error("Falha em TextSearchableProtocol.doc(IntWritable)");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (IOException e) {
 			LOG.error("Falha em TextSearchableProtocol.doc(IntWritable)");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 		return null;
 	}
@@ -120,7 +120,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 			}
 		} catch (Exception e) {
 			LOG.error("Falha em TextSearchableProtocol.doc(IntWritable, FieldSelector)");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		};
 		return null;
 	}
@@ -140,7 +140,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 			}
 		} catch (IOException e) {
 			LOG.error("Falha em TextSearchableProtocol.docFreqs(TermWritable[])");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 		return null;
 	}
@@ -193,7 +193,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 			}
 		} catch (IOException e) {
 			LOG.error("Falha TextSearchableProtocol.docFreqs(TermWritable[])");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 			return null;
 		}
 	}
@@ -213,7 +213,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 			}
 		} catch (IOException e) {
 			LOG.error("Falha TextSearchableProtocol.explain()");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 			return null;
 		}
 	}
@@ -233,7 +233,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 			}
 		} catch (IOException e) {
 			LOG.error("Falha em TextSearchableProtocol.maxDoc()");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 			return null;
 		}
 	}
@@ -253,7 +253,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 			}
 		} catch (IOException e) {
 			LOG.error("Falha em TextSearchableProtocol.rewrite(QueryWritable)");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 			return null;
 		}
 	}
@@ -286,7 +286,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 			}
 		} catch (IOException e) {
 			LOG.error("Falha em TextSearchableProtocol.search()");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 			return null;
 		}
 	}
@@ -318,7 +318,7 @@ public class TextSearchableProtocol implements ITextSearchableProtocol {
 			}
 		} catch (IOException e) {
 			LOG.error("Falha em TextSearchableProtocol.search(WeightWritable,FilterWritable,IntWritable,SortWritabl)");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 			return null;
 		}
 	}

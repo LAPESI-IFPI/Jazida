@@ -28,7 +28,7 @@ public class ClusterServiceTest {
 		when(zk.getData(ZkConf.DATANODES_PATH + "/"+ "host1", false, null)).thenReturn(Serializer.fromObject(dataNode1));
 		
 		//Quando
-		List<NodeStatus> dataNodes = ListsManager.getDataNodesConnected();
+		List<NodeStatus> dataNodes = ListsManager.getDatanodesConnected();
 		
 		//Então
 		assertThat(dataNodes, contains(dataNode1));

@@ -49,7 +49,7 @@ public class SupportIndexImageProtocol implements ISupportIndexImageProtocol {
 
 		} catch (IOException e) {
 			LOG.error("Falha no metodo: updateIndexReply() Protocol");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 	}
 	
@@ -71,7 +71,7 @@ public class SupportIndexImageProtocol implements ISupportIndexImageProtocol {
 
 		} catch (IOException e) {
 			LOG.error("Falha no metodo: restoreIndexReply() Protocol");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 				
 	}
@@ -98,7 +98,7 @@ public class SupportIndexImageProtocol implements ISupportIndexImageProtocol {
 			}
 			
 			} catch (Exception e) {
-				LOG.error(e);
+				LOG.error(e.fillInStackTrace(), e);
 			} catch (Throwable e) {
 				LOG.error("Falha no metodo: checkIndexImage() Protocol");
 			}

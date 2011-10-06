@@ -1,6 +1,8 @@
 package br.edu.ifpi.jazida.cluster;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.log4j.Logger;
@@ -30,7 +32,6 @@ public class ClusterService implements Watcher, VoidCallback {
 	private CountDownLatch connectedSignal = new CountDownLatch(1);
 	private NodeStatus node;
 	
-	public ClusterService(){}
 	
 	public ClusterService(NodeStatus node)
 			throws KeeperException, InterruptedException, IOException {
@@ -58,41 +59,50 @@ public class ClusterService implements Watcher, VoidCallback {
 			}
 			
 			LOG.info("Conectando-se ao Cluster Service...");
-				
 			String path = ZkConf.DATANODES_PATH + "/" + hostName;
 			if((zk.exists(path, true) == null)) {
 				zk.create(path, Serializer.fromObject(node), Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
 				LOG.info("Conectado ao grupo.");
 			}
 			else {
-				LOG.fatal("Um datanode com este hostname ja esta conectado ao grupo. Utilize outro 'hostname'.");
+				LOG.fatal("Um datanode com este hostname ja esta conectado ao grupo. Reinicie o datanode com outro 'hostName'.");
+				LOG.fatal("Reinicie o datanode com outro 'hostName'.");
+				List<String> listDesc = (List<String>) Serializer.toObject(zk.getData(ZkConf.DATANODES_DESCONNECTED, false, null)); 
+				List<String> listConected = zk.getChildren(ZkConf.DATANODES_PATH, true);
+				Map<String, List<String>> object = (Map<String, List<String>>) Serializer.toObject(zk.getData(ZkConf.MANAGER_NODES_RESPONDING, false, null));
+				if(listDesc != null){
+					if (listDesc.size() > 0)
+						LOG.info("Datanodes desconectados: " + listDesc);
+					if (listConected.size() > 0)
+						LOG.info("Datanodes conectados: " + listConected);
+				} else {
+					LOG.info("Datanodes conectados: " + listConected);
+				}
+				
+				connectedSignal.await();
+			}
+			
+			
+			if (zk.exists(ZkConf.DATANODES_DESCONNECTED, false) == null) {
+				zk.create(ZkConf.DATANODES_DESCONNECTED, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+			}
+			
+			if (zk.exists(ZkConf.HISTORIC_SEND, false) == null) {
+				zk.create(ZkConf.HISTORIC_SEND, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+			}
+			
+			if (zk.exists(ZkConf.MANAGER_NODES_RESPONDING, false) == null) {
+				zk.create(ZkConf.MANAGER_NODES_RESPONDING, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 			}
 			
 		} catch (KeeperException e) {
-			LOG.error(e);
+			LOG.error(e.getMessage(), e);
 		} catch (InterruptedException e) {
-			LOG.error(e);
+			LOG.error(e.getMessage(), e);
 		} catch (IOException e) {
-			LOG.error(e);
-		}
-	}
-	
-	public void registerNodesDisconnectedClusterService(String hostName) {
-		try {
-			
-			if (zk.exists(ZkConf.HISTORIC_PATH, false) == null) {
-				zk.create(ZkConf.HISTORIC_PATH, null, Ids.OPEN_ACL_UNSAFE,
-						CreateMode.PERSISTENT);
-			}
-			String pathHistoric = ZkConf.HISTORIC_PATH + "/" + hostName;
-			if((zk.exists(pathHistoric, false) == null)) {
-				zk.create(pathHistoric, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-			}
-			
-		} catch (KeeperException e) {
-			LOG.error(e);
-		} catch (InterruptedException e) {
-			LOG.error(e);
+			LOG.error(e.getMessage(), e);
+		} catch (ClassNotFoundException e) {
+			LOG.error(e.getMessage(), e);
 		}
 	}
 	
@@ -106,9 +116,6 @@ public class ClusterService implements Watcher, VoidCallback {
 			case SyncConnected:
 				registerOnClusterService(node.getHostname(), node);
 				ListsManager.manager();
-				//registerHistoricClusterService(node.getHostname());
-				//ListsManager.loadNodesReplyReceive();
-				//ListsManager.loadMemoryHistoricNodes();
 				connectedSignal.countDown();				
 				break;
 
@@ -117,11 +124,17 @@ public class ClusterService implements Watcher, VoidCallback {
 				break;
 
 			case Disconnected:
-				LOG.fatal("Esse datanode desconectou-se do cluster, conecte-o novamente a rede.");
+				try {
+					LOG.fatal("Esse datanode desconectou-se do cluster, conecte-o novamente a rede.");
+					connectedSignal.wait();
+				} catch (InterruptedException e) {
+					LOG.error(e.getMessage(), e);
+				}
+				
 				break;
 			}
 
-		} else {		
+		} else {
 			switch (event.getType()) {
 			case NodeCreated:
 				zk.sync(path, this, null);
@@ -145,7 +158,10 @@ public class ClusterService implements Watcher, VoidCallback {
 	@Override
 	public void processResult(int rc, String path, Object ctx) {
 		try {			
-			if(!path.contains(ZkConf.HISTORIC_PATH)){
+			if(!path.contains(ZkConf.DATANODES_DESCONNECTED) ||
+					!path.contains(ZkConf.HISTORIC_SEND) ||
+						!path.contains(ZkConf.MANAGER_NODES_RESPONDING)){
+				
 				int begin = path.lastIndexOf("/");
 				int end = path.length();
 				String hostName = path.substring(begin + 1, end);
@@ -161,9 +177,9 @@ public class ClusterService implements Watcher, VoidCallback {
 			}
 				
 		} catch (KeeperException e) {
-			LOG.error(e);
+			LOG.error(e.getMessage(), e);
 		} catch (InterruptedException e) {
-			LOG.error(e);
+			LOG.error(e.getMessage(), e);
 		}
 	}	
 	

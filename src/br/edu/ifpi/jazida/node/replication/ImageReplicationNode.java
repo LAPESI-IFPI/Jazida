@@ -74,7 +74,7 @@ public class ImageReplicationNode {
 					endereco, HADOOP_CONFIGURATION);
 			return proxy;
 		} catch (IOException e){
-			e.getMessage();
+			LOG.error(e.fillInStackTrace(), e);
 		}
 		return null;
 	}
@@ -110,11 +110,11 @@ public class ImageReplicationNode {
 			}
 		
 		} catch (InterruptedException e) {
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (ExecutionException e) {
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (Throwable e){
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 	}
 
@@ -146,13 +146,13 @@ public class ImageReplicationNode {
 			}
 		
 		} catch (InterruptedException e) {
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (ExecutionException e) {
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (TimeoutException e) {
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (Throwable e){
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 	}
 
@@ -183,13 +183,13 @@ public class ImageReplicationNode {
 			}
 		
 		} catch (InterruptedException e) {
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (ExecutionException e) {
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (TimeoutException e) {
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (Throwable e){
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 	}
 

@@ -22,7 +22,9 @@ public class ZkConf {
 	public static int ZOOKEEPER_TIMEOUT;
 	public static int ZOOKEEPER_TICKTIME;
 	public static String DATANODES_PATH;
-	public static String HISTORIC_PATH;
+	public static String DATANODES_DESCONNECTED;
+	public static String HISTORIC_SEND;
+	public static String MANAGER_NODES_RESPONDING;
 
 	static {
 		try {
@@ -33,7 +35,9 @@ public class ZkConf {
 			ZOOKEEPER_TIMEOUT = Integer.parseInt(properties.getProperty("zookeeper.timeout"));
 			ZOOKEEPER_TICKTIME = Integer.parseInt(properties.getProperty("zookeeper.ticktime"));
 			DATANODES_PATH = properties.getProperty("zookeeper.path.datanodes");
-			HISTORIC_PATH = properties.getProperty("zookeeper.path.historic");
+			DATANODES_DESCONNECTED = properties.getProperty("zookeeper.path.datanodesDesconnected");
+			HISTORIC_SEND = properties.getProperty("zookeeper.path.historicSend");
+			MANAGER_NODES_RESPONDING = properties.getProperty("zookeeper.path.managerNodesResponding");
 		} catch (IOException e) {
 			LOG.error("Falha na leitura do arquivo de configurações ./conf/jazida.zk.properties");
 		}

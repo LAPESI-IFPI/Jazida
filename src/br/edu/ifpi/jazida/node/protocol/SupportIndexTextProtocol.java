@@ -50,7 +50,7 @@ public class SupportIndexTextProtocol implements ISupportIndexTextProtocol {
 
 		} catch (IOException e) {
 			LOG.error("Falha no metodo: updateIndexReply() Protocol");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 	}
 	
@@ -71,7 +71,7 @@ public class SupportIndexTextProtocol implements ISupportIndexTextProtocol {
 
 		} catch (IOException e) {
 			LOG.error("Falha no metodo: restoreIndexReply() Protocol");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 				
 	}
@@ -99,7 +99,7 @@ public class SupportIndexTextProtocol implements ISupportIndexTextProtocol {
 		
 		} catch (Exception e) {
 			LOG.error("Falha no metodo: checkIndexText() Protocol");
-			LOG.error(e);
+			LOG.error(e.fillInStackTrace(), e);
 		}
 		return null;
 	}

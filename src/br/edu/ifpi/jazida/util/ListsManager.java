@@ -160,6 +160,7 @@ public class ListsManager {
 				zk.setData(ZkConf.HISTORIC_SEND, Serializer.fromObject((Serializable) historicSendNodesDesconnected), -1);
 			}
 			
+			managerNodesResponding = getManagerNodesResponding();
 			if(cacheNodesReplyReceive.contains(hostNameDesc)){
 				if(!managerNodesResponding.containsKey(hostNameDesc)){
 					List<NodeStatus> nodesExists = null;
@@ -272,7 +273,7 @@ public class ListsManager {
 			LOG.error(e.getMessage(), e);
 		} 
 	}
-	
+
 	public synchronized static void managerNodesConnected(String hostName, NodeStatus node) {
 		try{
 			String path = ZkConf.DATANODES_PATH + "/" + HOSTNAME;
@@ -282,6 +283,11 @@ public class ListsManager {
 			}
 			System.out.println("getDatanodesDisconnected(): " + getDatanodesDisconnected());
 			System.out.println("historicSendNodesDesconnected " + historicSendNodesDesconnected);
+			if(managerNodesResponding.containsKey(hostName)){
+				managerNodesResponding.remove(hostName);
+				zk.setData(ZkConf.MANAGER_NODES_RESPONDING, Serializer.fromObject((Serializable) managerNodesResponding), -1);
+			}
+			
 			if(nodesDesconnected.contains(hostName)){
 				if (historicSendNodesDesconnected.containsKey(hostName))
 					historicSendNodesDesconnected.remove(hostName);
@@ -303,13 +309,12 @@ public class ListsManager {
 				if(hostName.equals(HOSTNAME)){
 					new SupportReplyText().checkRepliesText(nodesReplyReceive);
 					new SupportReplyImage().checkRepliesImage(nodesReplyReceive);
-				}				
+				}
 			} 	
 			
 			System.out.println("historicSendNodesDesconnected " + historicSendNodesDesconnected);
 			System.out.println("managerNodesResponding:  " + managerNodesResponding);
 			System.out.println("nodesDesconnected: " + getDatanodesDisconnected());
-			System.out.println("nodeLocal respondendo: " + node.getNodesResponding());
 			
 		
 		} catch (KeeperException e) {
@@ -354,7 +359,7 @@ public class ListsManager {
 		try {
 			List<String> nodesIds = zk.getChildren(ZkConf.DATANODES_PATH, true);
 			LOG.info("Cluster com " + nodesIds.size() + " datanode(s) ativo(s) no momento.");
-	
+			
 			for (String hostName : nodesIds) {
 					String path = ZkConf.DATANODES_PATH + "/" + hostName;
 					byte[] bytes = zk.getData(path,	true, null);
@@ -474,7 +479,7 @@ public class ListsManager {
 		return datanodesExits;
 	}
 	
-	private static boolean loadDada() {
+	private static void loadDada() {
 		try{ 
 			
 			byte[] bytes =  zk.getData(ZkConf.DATANODES_DESCONNECTED, false, null);
@@ -507,7 +512,6 @@ public class ListsManager {
 			LOG.error(e.getMessage(), e);
 		}
 		
-		return isLoaded;
 	}
 	
 	private static int getIdDatanode(String hostname){
@@ -520,6 +524,15 @@ public class ListsManager {
 	
 	public static void setZk(ZooKeeper zk) {
 		ListsManager.zk = zk;
+	}
+	
+	private static Map<String, List<String>> getManagerNodesResponding() throws KeeperException, InterruptedException, IOException, ClassNotFoundException {
+		Map<String, List<String>> managerNodesResponding = new HashMap<String, List<String>>();
+		byte[] bytes2 =  zk.getData(ZkConf.MANAGER_NODES_RESPONDING, false, null);
+		if(bytes2 != null) {
+			managerNodesResponding.putAll((Map<String, List<String>>) Serializer.toObject(bytes2));
+		}
+		return managerNodesResponding;
 	}
 
 }

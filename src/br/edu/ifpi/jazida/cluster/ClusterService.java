@@ -71,6 +71,7 @@ public class ClusterService implements Watcher, VoidCallback {
 				List<String> listConected = zk.getChildren(ZkConf.DATANODES_PATH, true);
 				Map<String, List<String>> object = (Map<String, List<String>>) Serializer.toObject(zk.getData(ZkConf.MANAGER_NODES_RESPONDING, false, null));
 				if(listDesc != null){
+					LOG.info("HostName utilizado: " +hostName);
 					if (listDesc.size() > 0)
 						LOG.info("Datanodes desconectados: " + listDesc);
 					if (listConected.size() > 0)
@@ -81,7 +82,6 @@ public class ClusterService implements Watcher, VoidCallback {
 				
 				connectedSignal.await();
 			}
-			
 			
 			if (zk.exists(ZkConf.DATANODES_DESCONNECTED, false) == null) {
 				zk.create(ZkConf.DATANODES_DESCONNECTED, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);

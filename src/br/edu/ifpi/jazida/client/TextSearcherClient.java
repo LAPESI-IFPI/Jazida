@@ -59,7 +59,7 @@ public class TextSearcherClient implements TextSearcher {
 	
 	public TextSearcherClient() 
 	throws IOException, KeeperException, InterruptedException {
-		this.datanodes = ListsManager.getDataNodes();
+		this.datanodes = ListsManager.getDatanodes();
 
 		if (datanodes.size()==0) {
 			throw new NoNodesAvailableException("Nenhum DataNode conectado ao ClusterService.");

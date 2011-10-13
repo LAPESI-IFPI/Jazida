@@ -53,7 +53,7 @@ public class TextIndexerClient implements TextIndexer {
 	}
 
 	private void loadProxy() {
-		datanodes = ListsManager.getDataNodes();
+		datanodes = ListsManager.getDatanodes();
 		if (datanodes.size() == 0)
 			throw new NoNodesAvailableException("Nenhum DataNode conectado ao ClusterService.");
 		
@@ -91,7 +91,7 @@ public class TextIndexerClient implements TextIndexer {
 			loadProxy();
 			
 			MetaDocumentWritable documentWrap = new MetaDocumentWritable(metaDocument);
-			NodeStatus node = ListsManager.nextNode();
+			NodeStatus node = ListsManager.nextDatanode();
 			ITextIndexerProtocol proxy = proxyMap.get(node.getHostname());
 			result = proxy.addText(documentWrap, new Text(content));			
 			

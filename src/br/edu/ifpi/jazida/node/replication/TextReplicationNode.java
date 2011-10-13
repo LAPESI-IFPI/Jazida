@@ -52,7 +52,7 @@ public class TextReplicationNode {
 	}
 	
 	private void loadProxy(){
-		datanodes = ListsManager.getNodesReplication();
+		datanodes = ListsManager.getDatanodesReplication();
 		if (datanodes.size() == 0){
 			LOG.info("Apenas um datanode conectado ao cluster");
 		}

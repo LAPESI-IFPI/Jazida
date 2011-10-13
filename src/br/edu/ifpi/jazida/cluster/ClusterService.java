@@ -1,6 +1,9 @@
 package br.edu.ifpi.jazida.cluster;
 
 import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -63,8 +66,8 @@ public class ClusterService implements Watcher, VoidCallback {
 			if((zk.exists(path, true) == null)) {
 				zk.create(path, Serializer.fromObject(node), Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
 				LOG.info("Conectado ao grupo.");
-			}
-			else {
+			
+			} else {
 				LOG.fatal("Um datanode com este hostname ja esta conectado ao grupo. Reinicie o datanode com outro 'hostName'.");
 				LOG.fatal("Reinicie o datanode com outro 'hostName'.");
 				List<String> listDesc = (List<String>) Serializer.toObject(zk.getData(ZkConf.DATANODES_DESCONNECTED, false, null)); 
@@ -83,16 +86,34 @@ public class ClusterService implements Watcher, VoidCallback {
 				connectedSignal.await();
 			}
 			
+			List<String> listConected = zk.getChildren(ZkConf.DATANODES_PATH, true);
+			if (listConected.size() == 1){
+				if (zk.exists(ZkConf.DATANODES_DESCONNECTED, false) != null) {
+					zk.delete(ZkConf.DATANODES_DESCONNECTED, -1);
+				}
+				
+				if (zk.exists(ZkConf.HISTORIC_SEND, false) != null) {
+					zk.delete(ZkConf.HISTORIC_SEND, -1);
+				}
+				
+				if (zk.exists(ZkConf.MANAGER_NODES_RESPONDING, false) != null) {
+					zk.delete(ZkConf.MANAGER_NODES_RESPONDING, -1);
+				}
+			}
+			
 			if (zk.exists(ZkConf.DATANODES_DESCONNECTED, false) == null) {
-				zk.create(ZkConf.DATANODES_DESCONNECTED, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+				List<String> nodesDesconnected = new ArrayList<String>();
+				zk.create(ZkConf.DATANODES_DESCONNECTED, Serializer.fromObject((Serializable) nodesDesconnected), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 			}
 			
 			if (zk.exists(ZkConf.HISTORIC_SEND, false) == null) {
-				zk.create(ZkConf.HISTORIC_SEND, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+				Map<String, List<String>> historicSendNodesDesconnected = new HashMap<String, List<String>>();
+				zk.create(ZkConf.HISTORIC_SEND, Serializer.fromObject((Serializable) historicSendNodesDesconnected), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 			}
 			
 			if (zk.exists(ZkConf.MANAGER_NODES_RESPONDING, false) == null) {
-				zk.create(ZkConf.MANAGER_NODES_RESPONDING, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+				Map<String, List<String>> managerNodesResponding = new HashMap<String, List<String>>();
+				zk.create(ZkConf.MANAGER_NODES_RESPONDING, Serializer.fromObject((Serializable) managerNodesResponding), Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 			}
 			
 		} catch (KeeperException e) {
@@ -116,7 +137,7 @@ public class ClusterService implements Watcher, VoidCallback {
 			case SyncConnected:
 				registerOnClusterService(node.getHostname(), node);
 				ListsManager.manager();
-				connectedSignal.countDown();				
+				connectedSignal.countDown();
 				break;
 
 			case Expired:
@@ -124,13 +145,7 @@ public class ClusterService implements Watcher, VoidCallback {
 				break;
 
 			case Disconnected:
-				try {
-					LOG.fatal("Esse datanode desconectou-se do cluster, conecte-o novamente a rede.");
-					connectedSignal.wait();
-				} catch (InterruptedException e) {
-					LOG.error(e.getMessage(), e);
-				}
-				
+				LOG.fatal("Esse datanode desconectou-se do cluster, conecte-o novamente a rede.");
 				break;
 			}
 
@@ -145,7 +160,11 @@ public class ClusterService implements Watcher, VoidCallback {
 				break;
 			
 			case NodeDataChanged:
-				ListsManager.managerNodesChanged(path, node);
+				int begin = path.lastIndexOf("/");
+				int end = path.length();
+				String hostName = path.substring(begin + 1, end);
+				
+				ListsManager.managerNodesChanged(hostName, node);
 				break;
 				
 			case NodeChildrenChanged:
@@ -169,10 +188,10 @@ public class ClusterService implements Watcher, VoidCallback {
 				if((zk.exists(path, true) == null)) {
 					LOG.info("Um datanode desconectou-se do cluster.");
 					LOG.info("Datanode que se desconectou: " + hostName);
-					ListsManager.managerNodesDeleted(hostName, node);
+					ListsManager.managerDatanodesDeleted(hostName, node);
 				} else {
 					LOG.info("Datanode que se conectou: " + hostName);
-					ListsManager.managerNodesConnected(hostName, node);
+					ListsManager.managerDatanodesCreated(hostName, node);
 				}
 			}
 				

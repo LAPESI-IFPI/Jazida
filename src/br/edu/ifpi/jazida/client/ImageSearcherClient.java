@@ -74,7 +74,7 @@ public class ImageSearcherClient implements SearcherImage {
 
 	public ImageSearcherClient() throws IOException, KeeperException, InterruptedException {
 		LOG.info("Inicializando ImageSearchClient");
-		this.datanodes = ListsManager.getDataNodes();
+		this.datanodes = ListsManager.getDatanodes();
 
 		if (datanodes.size()==0) {
 			throw new NoNodesAvailableException("Nenhum DataNode conectado ao ClusterService.");

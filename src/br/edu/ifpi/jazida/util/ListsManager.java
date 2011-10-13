@@ -24,38 +24,37 @@ public class ListsManager {
 	private static final int REPLY_FREQUENCY = Integer.parseInt(PathJazida.REPLY_FREQUENCY.getValue());
 	private static ZooKeeper zk;
 	private static PartitionPolicy<NodeStatus> partitionPolicy = new RoundRobinPartitionPolicy();
-	private static List<NodeStatus> nodesConnected = new ArrayList<NodeStatus>();
-	private static List<String> nodesDesconnected = new ArrayList<String>();
-	private static List<NodeStatus> nodesReplySend = new ArrayList<NodeStatus>();
+	private static List<NodeStatus> datanodesConnected = new ArrayList<NodeStatus>();
+	private static List<String> datanodesDesconnected = new ArrayList<String>();
+	private static List<NodeStatus> datanodesReplySend = new ArrayList<NodeStatus>();
 	private static Map<Integer, NodeStatus> mapReplyUtil = new HashMap<Integer, NodeStatus>();
 	private static Map<Integer, NodeStatus> cacheMapReplyUtil = new HashMap<Integer, NodeStatus>();
-	private static List<NodeStatus> nodesReplyReceive = new ArrayList<NodeStatus>();
-	private static List<String> cacheNodesReplyReceive = new ArrayList<String>();
-	private static Map<String, List<String>> managerNodesResponding = new HashMap<String, List<String>>();
-	private static Map<String, List<String>> historicSendNodesDesconnected = new HashMap<String, List<String>>();
-	private static boolean isLoaded = false; 
+	private static List<NodeStatus> datanodesReplyReceive = new ArrayList<NodeStatus>();
+	private static List<String> cacheDatanodesReplyReceive = new ArrayList<String>();
+	private static Map<String, List<String>> managerDatanodesResponding = new HashMap<String, List<String>>();
+	private static Map<String, List<String>> historicSendDatanodesDesconnected = new HashMap<String, List<String>>();
 	private static int idLastNode = 0;
 	private static int idFirstNode = 9999999;
 	private static int replyFrequency;
 	private static int cacheReplyFrequency;
 	
 	private synchronized static void loadRoundRobinPartitionPolicy(){
-		if (!nodesConnected.isEmpty())
-			nodesConnected.clear();
+		if (!datanodesConnected.isEmpty())
+			datanodesConnected.clear();
 		
-		nodesConnected = getDatanodesConnected();
+		datanodesConnected = getDatanodesConnected();
 		partitionPolicy.clear();
-		partitionPolicy.addNodes(nodesConnected.toArray(new NodeStatus[nodesConnected.size()]));
+		partitionPolicy.addNodes(datanodesConnected.toArray(new NodeStatus[datanodesConnected.size()]));
 	}	
 
-	private synchronized static void loadNodesReplySend() {
-		if(!nodesReplySend.isEmpty())
-			nodesReplySend.clear();		
+	private synchronized static void loadDatanodesReplySend() {
+		if(!datanodesReplySend.isEmpty())
+			datanodesReplySend.clear();		
 		
 		int idNode = getIdDatanode(HOSTNAME);
 		for(int i=0; i < replyFrequency; i++){
 			NodeStatus node = null;
-			if(nodesConnected.size() > 1){
+			if(datanodesConnected.size() > 1){
 				while(node == null){
 					idNode++;
 					if(idNode > idLastNode)
@@ -64,15 +63,15 @@ public class ListsManager {
 					node = mapReplyUtil.get(idNode);
 					
 					if(node != null ) 
-						nodesReplySend.add(node);
+						datanodesReplySend.add(node);
 				}
 			}
 		}		
 	}
 	
-	private synchronized static void loadNodesReplyReceive() {
-		if(!nodesReplyReceive.isEmpty())
-			nodesReplyReceive.clear();
+	private synchronized static void loadDatanodesReplyReceive() {
+		if(!datanodesReplyReceive.isEmpty())
+			datanodesReplyReceive.clear();
 	
 		int idNode = getIdDatanode(HOSTNAME);
 		for(int i=0; i < replyFrequency; i++){
@@ -86,17 +85,17 @@ public class ListsManager {
 					node = mapReplyUtil.get(idNode);
 					
 				if(node != null ) 
-					nodesReplyReceive.add(node);
+					datanodesReplyReceive.add(node);
 			}
 		}
 	}
 	
 	private synchronized static void setUpSendReceiveReply(){
-		if(nodesConnected.isEmpty())
+		if(datanodesConnected.isEmpty())
 			loadRoundRobinPartitionPolicy();
 		
-		if(nodesConnected.size() <= REPLY_FREQUENCY){
-			replyFrequency = (nodesConnected.size() - 1);
+		if(datanodesConnected.size() <= REPLY_FREQUENCY){
+			replyFrequency = (datanodesConnected.size() - 1);
 		} else {
 			replyFrequency = REPLY_FREQUENCY;
 		}
@@ -104,7 +103,7 @@ public class ListsManager {
 		if(!mapReplyUtil.isEmpty())
 			mapReplyUtil.clear();
 
-		for(NodeStatus node: nodesConnected){
+		for(NodeStatus node: datanodesConnected){
 			int id = getIdDatanode(node.getHostname());
 			mapReplyUtil.put(id, node);
 			if(id > idLastNode)
@@ -123,11 +122,11 @@ public class ListsManager {
 		
 		cacheReplyFrequency = replyFrequency;
 		
-		if(!cacheNodesReplyReceive.isEmpty()){ 
-			cacheNodesReplyReceive.clear();
+		if(!cacheDatanodesReplyReceive.isEmpty()){ 
+			cacheDatanodesReplyReceive.clear();
 		}		
-		for(NodeStatus node: nodesReplyReceive){
-			cacheNodesReplyReceive.add(node.getHostname());
+		for(NodeStatus node: datanodesReplyReceive){
+			cacheDatanodesReplyReceive.add(node.getHostname());
 		}		
 	}
 	
@@ -135,45 +134,45 @@ public class ListsManager {
 		loadRoundRobinPartitionPolicy();
 		loadCache();
 		setUpSendReceiveReply();
-		loadNodesReplySend();
-		loadNodesReplyReceive();
+		loadDatanodesReplySend();
+		loadDatanodesReplyReceive();
 	}
 	
-	public synchronized static void managerNodesDeleted(String hostNameDesc, NodeStatus nodeLocal) {
+	public synchronized static void managerDatanodesDeleted(String hostNameDesc, NodeStatus nodeLocal) {
 		try{
-			String path;
-			NodeStatus leader = getDatanodeLeader();
 			
-			if(!nodesDesconnected.contains(hostNameDesc)){
-				nodesDesconnected.add(hostNameDesc);					
-			}
-			
-			if(HOSTNAME.equals(leader.getHostname())){
-				zk.setData(ZkConf.DATANODES_DESCONNECTED, Serializer.fromObject((Serializable) nodesDesconnected), -1);
-			}			
-			
-			List<String> listSend = getListNodeSendReply(hostNameDesc);
-			if(!historicSendNodesDesconnected.containsKey(hostNameDesc))
-				historicSendNodesDesconnected.put(hostNameDesc, listSend);
-			
-			if(HOSTNAME.equals(leader.getHostname())){
-				zk.setData(ZkConf.HISTORIC_SEND, Serializer.fromObject((Serializable) historicSendNodesDesconnected), -1);
-			}
-			
-			managerNodesResponding = getManagerNodesResponding();
-			if(cacheNodesReplyReceive.contains(hostNameDesc)){
-				if(!managerNodesResponding.containsKey(hostNameDesc)){
+			if(cacheDatanodesReplyReceive.contains(hostNameDesc)){
+				String path;
+				NodeStatus leader = null;
+				
+				loadDada();
+				
+				if(!datanodesDesconnected.contains(hostNameDesc)){
+					datanodesDesconnected.add(hostNameDesc);					
+				}
+				
+				List<String> listSend = getListNodeSendReply(hostNameDesc);
+				if(!historicSendDatanodesDesconnected.containsKey(hostNameDesc)){
+					historicSendDatanodesDesconnected.put(hostNameDesc, listSend);
+				}
+				
+				leader = getDatanodeLeader(hostNameDesc);
+				if(HOSTNAME.equals(leader.getHostname())){
+					zk.setData(ZkConf.DATANODES_DESCONNECTED, Serializer.fromObject((Serializable) datanodesDesconnected), -1);
+					zk.setData(ZkConf.HISTORIC_SEND, Serializer.fromObject((Serializable) historicSendDatanodesDesconnected), -1);
+				}
+				
+				if(!managerDatanodesResponding.containsKey(hostNameDesc)){
 					List<NodeStatus> nodesExists = null;
 					NodeStatus nodeResponder = null;
 					
 					nodesExists = getDatanodesExists(listSend);
-					nodeResponder = getDatanodeReponder(nodesExists, hostNameDesc);
+					nodeResponder = getDatanodeResponder(nodesExists, hostNameDesc);
 					
 					if(nodeResponder != null){
 						if(nodeResponder.getHostname().equals(HOSTNAME)){
 							path = ZkConf.DATANODES_PATH + "/" + HOSTNAME;
 							nodeLocal.getNodesResponding().add(hostNameDesc);
-							System.out.println("nodeLocal respondendo: " + nodeLocal.getNodesResponding());					
 							try {
 								zk.setData(path, Serializer.fromObject(nodeLocal), -1);
 							} catch (KeeperException e) {}
@@ -186,13 +185,12 @@ public class ListsManager {
 					NodeStatus nodeResponder = null;
 					
 					nodesExists = getDatanodesExists(listSend);
-					nodeResponder = getDatanodeReponder(nodesExists, hostNameDesc);
+					nodeResponder = getDatanodeResponder(nodesExists, hostNameDesc);
 					
 					if(nodeResponder != null){
 						if(nodeResponder.getHostname().equals(HOSTNAME)){
 							path = ZkConf.DATANODES_PATH + "/" + HOSTNAME;
 							nodeLocal.getNodesResponding().add(hostNameDesc);
-							System.out.println("nodeLocal respondendo: " + nodeLocal.getNodesResponding());					
 							try {
 								zk.setData(path, Serializer.fromObject(nodeLocal), -1);
 							} catch (KeeperException e) {}
@@ -202,14 +200,14 @@ public class ListsManager {
 					Thread.sleep(3500);
 					nodesExists.clear();					
 					
-					List<String> listNodesResponding = managerNodesResponding.get(hostNameDesc);
+					List<String> listNodesResponding = managerDatanodesResponding.get(hostNameDesc);
 					List<String> listHistoric = new ArrayList<String>();
 					
 					for(String nodeName: listNodesResponding){
-						listHistoric = historicSendNodesDesconnected.get(nodeName);
+						listHistoric = historicSendDatanodesDesconnected.get(nodeName);
 						
 						nodesExists = getDatanodesExists(listHistoric);
-						nodeResponder = getDatanodeReponder(nodesExists, nodeName);
+						nodeResponder = getDatanodeResponder(nodesExists, nodeName);
 						
 						if((nodeResponder != null) && (!nodeResponder.getHostname().equals(""))){
 							path = ZkConf.DATANODES_PATH + "/" + nodeResponder.getHostname();
@@ -218,19 +216,16 @@ public class ListsManager {
 								zk.setData(path, Serializer.fromObject(nodeResponder), -1);	
 							} catch (KeeperException e) {}
 						}
-						
-						System.out.println(nodeResponder + " = nodeResponder respondendo: " + nodeResponder.getNodesResponding());
 					}
 				}
 				
-				if(managerNodesResponding.containsKey(hostNameDesc)){
-					managerNodesResponding.remove(hostNameDesc);
+				if(managerDatanodesResponding.containsKey(hostNameDesc)){
+					managerDatanodesResponding.remove(hostNameDesc);
 				}
 				
 				if(HOSTNAME.equals(leader.getHostname())){
-					zk.setData(ZkConf.MANAGER_NODES_RESPONDING, Serializer.fromObject((Serializable) managerNodesResponding), -1);
+					zk.setData(ZkConf.MANAGER_NODES_RESPONDING, Serializer.fromObject((Serializable) managerDatanodesResponding), -1);
 				}
-				
 			}
 			
 		} catch (InterruptedException e) {
@@ -244,25 +239,54 @@ public class ListsManager {
 		}
 	}
 	
-	public synchronized static void managerNodesChanged(String path, NodeStatus nodeLocal) {
+	public synchronized static void managerNodesChanged(String hostName, NodeStatus nodeLocal) {
 		try{
-			byte[] bytes = zk.getData(path,	true, null);
-			List<String> nodesResponding = new ArrayList<String>();
-			NodeStatus datanode = (NodeStatus) Serializer.toObject(bytes);
 			
-			managerNodesResponding.put(datanode.getHostname(), datanode.getNodesResponding());
-			nodesResponding = managerNodesResponding.get(datanode.getHostname());
-			if(nodesResponding.isEmpty())
-				managerNodesResponding.remove(datanode.getHostname());
+			// Verificar aqui !!!
+			System.out.println("managerNodesChanged---------------------");
+			System.out.println("historicSendDatanodesDesconnected: " + historicSendDatanodesDesconnected);
+			System.out.println("getHistoricSendDatanodesDesconnected(): " + getHistoricSendDatanodesDesconnected());
+			System.out.println("managerDatanodesResponding:  " + managerDatanodesResponding);
+			System.out.println("getManagerDatanodesResponding():  " + getManagerDatanodesResponding());
+			System.out.println("nodesDesconnected: " + datanodesDesconnected);
+			System.out.println("getDatanodesDisconnected(): " + getDatanodesDisconnected());
+			System.out.println("managerNodesChanged---------------------");
 			
-			if (datanode.getHostname().equals(HOSTNAME)){
+			if(hostName.equals(HOSTNAME)){
+				String path = ZkConf.DATANODES_PATH + "/" + HOSTNAME;
+				managerDatanodesResponding = getManagerDatanodesResponding();
+				
+				byte[] bytes = zk.getData(path,	true, null);
+				List<String> nodesResponding = new ArrayList<String>();
+				NodeStatus datanode = (NodeStatus) Serializer.toObject(bytes);
+				
+				managerDatanodesResponding.put(datanode.getHostname(), datanode.getNodesResponding());
+				nodesResponding = managerDatanodesResponding.get(datanode.getHostname());
+				if(nodesResponding.isEmpty())
+					managerDatanodesResponding.remove(datanode.getHostname());
+				
 				nodeLocal.setNodesResponding(datanode.getNodesResponding());
-				zk.setData(ZkConf.MANAGER_NODES_RESPONDING, Serializer.fromObject((Serializable) managerNodesResponding), -1);
+				zk.setData(ZkConf.MANAGER_NODES_RESPONDING, Serializer.fromObject((Serializable) managerDatanodesResponding), -1);
+				
 			}
-						
-			System.out.println("managerNodesResponding: " + managerNodesResponding);
-			System.out.println("respondendo: " + nodeLocal.getNodesResponding());
 			
+			if(nodeLocal.getNodesResponding().size() > 0){
+				LOG.info("Este datanode esta respondendo pelo(s): " + nodeLocal.getNodesResponding());
+			}
+			
+			clear();
+			System.out.println();
+			System.out.println("managerNodesChanged----------------");
+			System.out.println("historicSendNodesDesconnected: " + historicSendDatanodesDesconnected);
+			System.out.println("getHistoricSendDatanodesDesconnected(): " + getHistoricSendDatanodesDesconnected());
+			System.out.println("nodesDesconnected: " + datanodesDesconnected);
+			System.out.println("getDatanodesDisconnected(): " + getDatanodesDisconnected());
+			System.out.println("managerDatanodesResponding:  " + managerDatanodesResponding);
+			System.out.println("getManagerDatanodesResponding():  " + getManagerDatanodesResponding());
+			System.out.println("respondendo: " + nodeLocal.getNodesResponding());
+			System.out.println("managerNodesChanged----------------");
+			
+		
 		} catch (KeeperException e) {
 			LOG.error(e.getMessage(), e);
 		}catch (InterruptedException e) {
@@ -274,75 +298,91 @@ public class ListsManager {
 		} 
 	}
 
-	public synchronized static void managerNodesConnected(String hostName, NodeStatus node) {
+	public synchronized static void managerDatanodesCreated(String hostName, NodeStatus nodeLocal) {
 		try{
-			String path = ZkConf.DATANODES_PATH + "/" + HOSTNAME;
 			
-			if(!isLoaded){
-				loadDada();
-			}
+			System.out.println("managerDatanodesCreated---------------------");
+			System.out.println("historicSendNodesDesconnected: " + historicSendDatanodesDesconnected);
+			System.out.println("getHistoricSendDatanodesDesconnected(): " + getHistoricSendDatanodesDesconnected());
+			System.out.println("managerDatanodesResponding:  " + managerDatanodesResponding);
+			System.out.println("getManagerDatanodesResponding():  " + getManagerDatanodesResponding());
+			System.out.println("nodesDesconnected: " + datanodesDesconnected);
 			System.out.println("getDatanodesDisconnected(): " + getDatanodesDisconnected());
-			System.out.println("historicSendNodesDesconnected " + historicSendNodesDesconnected);
-			if(managerNodesResponding.containsKey(hostName)){
-				managerNodesResponding.remove(hostName);
-				zk.setData(ZkConf.MANAGER_NODES_RESPONDING, Serializer.fromObject((Serializable) managerNodesResponding), -1);
+			System.out.println("managerDatanodesCreated---------------------");
+			
+			
+			if(nodeLocal.getNodesResponding().contains(hostName)){
+				String path = ZkConf.DATANODES_PATH + "/" + HOSTNAME;				
+				nodeLocal.getNodesResponding().remove(nodeLocal.getNodesResponding().indexOf(hostName));
+				zk.setData(path, Serializer.fromObject(nodeLocal), -1);			
 			}
 			
-			if(nodesDesconnected.contains(hostName)){
-				if (historicSendNodesDesconnected.containsKey(hostName))
-					historicSendNodesDesconnected.remove(hostName);
+			if(HOSTNAME.equals(hostName)){
+				loadDada();
 				
-				if(node.getNodesResponding().contains(hostName)){
-					node.getNodesResponding().remove(node.getNodesResponding().indexOf(hostName));
-					zk.setData(path, Serializer.fromObject(node), -1);					
+				if(managerDatanodesResponding.containsKey(hostName)){
+					managerDatanodesResponding.remove(hostName);
+					zk.setData(ZkConf.MANAGER_NODES_RESPONDING, Serializer.fromObject((Serializable) managerDatanodesResponding), -1);
 				}
 				
-				if(hostName.equals(HOSTNAME)){
-					nodesDesconnected.remove(hostName);
-					zk.setData(ZkConf.DATANODES_DESCONNECTED, Serializer.fromObject((Serializable) nodesDesconnected), -1);					
-					zk.setData(ZkConf.HISTORIC_SEND, Serializer.fromObject((Serializable) historicSendNodesDesconnected), -1);
-					System.out.println("nodesDesconnected: " +nodesDesconnected);
-				}				
+				if(datanodesDesconnected.contains(hostName)){
+					datanodesDesconnected.remove(hostName);
+					
+					if (historicSendDatanodesDesconnected.containsKey(hostName)){
+						historicSendDatanodesDesconnected.remove(hostName);
+					}
+					
+					zk.setData(ZkConf.DATANODES_DESCONNECTED, Serializer.fromObject((Serializable) datanodesDesconnected), -1);					
+					zk.setData(ZkConf.HISTORIC_SEND, Serializer.fromObject((Serializable) historicSendDatanodesDesconnected), -1);
+					
+					Thread.sleep(2000);
+					if(hostName.equals(HOSTNAME)){
+						new SupportReplyText().checkRepliesText(datanodesReplyReceive);
+						new SupportReplyImage().checkRepliesImage(datanodesReplyReceive);
+					}
+				} 	
 				
+				clear();
+				System.out.println();
+				System.out.println("managerDatanodesCreated---------------------");
+				System.out.println("historicSendDatanodesDesconnected: " + historicSendDatanodesDesconnected);
+				System.out.println("getHistoricSendDatanodesDesconnected(): " + getHistoricSendDatanodesDesconnected());
+				System.out.println("managerDatanodesResponding:  " + managerDatanodesResponding);
+				System.out.println("getManagerDatanodesResponding():  " + getManagerDatanodesResponding());
+				System.out.println("nodesDesconnected: " + datanodesDesconnected);
+				System.out.println("getDatanodesDisconnected(): " + getDatanodesDisconnected());
+				System.out.println("managerDatanodesCreated----------------------");
+				System.out.println();
 				
-				Thread.sleep(2000);
-				if(hostName.equals(HOSTNAME)){
-					new SupportReplyText().checkRepliesText(nodesReplyReceive);
-					new SupportReplyImage().checkRepliesImage(nodesReplyReceive);
-				}
-			} 	
-			
-			System.out.println("historicSendNodesDesconnected " + historicSendNodesDesconnected);
-			System.out.println("managerNodesResponding:  " + managerNodesResponding);
-			System.out.println("nodesDesconnected: " + getDatanodesDisconnected());
-			
-		
+			}
 		} catch (KeeperException e) {
 			LOG.error(e.getMessage(), e);
 		} catch (InterruptedException e) {
 			LOG.error(e.getMessage(), e);
 		} catch (IOException e) {
 			LOG.error(e.getMessage(), e);
+		} catch (ClassNotFoundException e) {
+			LOG.error(e.getMessage(), e);
 		}
 	}
 	
-	public static List<NodeStatus> getDataNodes(){
-		if (nodesConnected.isEmpty())
+	public static List<NodeStatus> getDatanodes(){
+		if (datanodesConnected.isEmpty())
 			loadRoundRobinPartitionPolicy();
 		
-		return nodesConnected;
+		return datanodesConnected;
 	}
 	
-	public static List<NodeStatus> getNodesReplication(){
-		if (nodesReplySend.isEmpty()){
+	public static List<NodeStatus> getDatanodesReplication(){
+		if (datanodesReplySend.isEmpty()){
 			setUpSendReceiveReply();
-			loadNodesReplySend();
+			loadDatanodesReplySend();
 		}
 		
-		return nodesReplySend;
+		return datanodesReplySend;
 	}
 	
-	public static NodeStatus nextNode() {
+	public static NodeStatus nextDatanode() {
 		return partitionPolicy.nextNode();
 	}
 	
@@ -381,12 +421,12 @@ public class ListsManager {
 	}
 	
 	private static List<String> getDatanodesDisconnected() {
-		List<String> nodes = new ArrayList<String>();
+		List<String> datanodes = new ArrayList<String>();
 		
 		try {
 			byte[] bytes = zk.getData(ZkConf.DATANODES_DESCONNECTED, false, null);
 			if (bytes != null)
-				nodes.addAll((List<String>) Serializer.toObject(bytes));
+				datanodes = (List<String>) Serializer.toObject(bytes);
 		} catch (KeeperException e) {
 			LOG.error(e.getMessage(), e);
 		} catch (InterruptedException e) {
@@ -397,15 +437,15 @@ public class ListsManager {
 			LOG.error(e.getMessage(), e);
 		} 
 	
-		return nodes;
+		return datanodes;
 	}
 	
-	private static NodeStatus getDatanodeLeader() throws KeeperException, InterruptedException, IOException, ClassNotFoundException{
+	private static NodeStatus getDatanodeLeader(String hostNameDesc) throws KeeperException, InterruptedException, IOException, ClassNotFoundException{
 		String path;
 		NodeStatus datanode = null;
-		
-		for(NodeStatus nodeLeader: nodesConnected) {
-			path = ZkConf.DATANODES_PATH + "/" + nodeLeader.getHostname();
+		List<String> list = historicSendDatanodesDesconnected.get(hostNameDesc);
+		for(String nameLeader: list) {
+			path = ZkConf.DATANODES_PATH + "/" + nameLeader;
 			if(zk.exists(path, true) != null){
 				byte[] bytes = zk.getData(path,	true, null);
 				datanode = (NodeStatus) Serializer.toObject(bytes);	
@@ -436,7 +476,7 @@ public class ListsManager {
 		return nodes;
 	}
 	
-	private static NodeStatus getDatanodeReponder (List<NodeStatus> datanodes, String hostName){
+	private static NodeStatus getDatanodeResponder (List<NodeStatus> datanodes, String hostName){
 		NodeStatus responder = null;
 		int aux = 999999999;
 		for(NodeStatus node: datanodes){
@@ -480,27 +520,11 @@ public class ListsManager {
 	}
 	
 	private static void loadDada() {
-		try{ 
+		try {
 			
-			byte[] bytes =  zk.getData(ZkConf.DATANODES_DESCONNECTED, false, null);
-			if(bytes != null) {
-				List<String> object = (List<String>) Serializer.toObject(bytes);
-				nodesDesconnected.addAll(object);
-			}
-			
-			byte[] bytes2 =  zk.getData(ZkConf.MANAGER_NODES_RESPONDING, false, null);
-			if(bytes2 != null) {
-				Map<String, List<String>> object = (Map<String, List<String>>) Serializer.toObject(bytes2);
-				managerNodesResponding.putAll(object);
-			}
-			
-			byte[] bytes3 =  zk.getData(ZkConf.HISTORIC_SEND, false, null);
-			if(bytes3 != null) {
-				Map<String, List<String>> object = (Map<String, List<String>>) Serializer.toObject(bytes3);
-				historicSendNodesDesconnected.putAll(object);
-			}
-			
-			isLoaded = true;
+			managerDatanodesResponding = getManagerDatanodesResponding();
+			historicSendDatanodesDesconnected = getHistoricSendDatanodesDesconnected();
+			datanodesDesconnected = getDatanodesDesconnected();			
 			
 		} catch (KeeperException e) {
 			LOG.error(e.getMessage(), e);
@@ -526,13 +550,48 @@ public class ListsManager {
 		ListsManager.zk = zk;
 	}
 	
-	private static Map<String, List<String>> getManagerNodesResponding() throws KeeperException, InterruptedException, IOException, ClassNotFoundException {
-		Map<String, List<String>> managerNodesResponding = new HashMap<String, List<String>>();
-		byte[] bytes2 =  zk.getData(ZkConf.MANAGER_NODES_RESPONDING, false, null);
-		if(bytes2 != null) {
-			managerNodesResponding.putAll((Map<String, List<String>>) Serializer.toObject(bytes2));
+	private static Map<String, List<String>> getManagerDatanodesResponding() throws KeeperException, InterruptedException, IOException, ClassNotFoundException {
+		Map<String, List<String>> managerDatanodesResponding = new HashMap<String, List<String>>();
+		byte[] bytes =  zk.getData(ZkConf.MANAGER_NODES_RESPONDING, false, null);
+		if(bytes != null) {
+			managerDatanodesResponding = ((Map<String, List<String>>) Serializer.toObject(bytes));
 		}
-		return managerNodesResponding;
+		
+		return managerDatanodesResponding;
 	}
 
+	private static Map<String, List<String>> getHistoricSendDatanodesDesconnected() throws KeeperException, InterruptedException, IOException, ClassNotFoundException {
+		Map<String, List<String>> historicSendNodesDesconnected = new HashMap<String, List<String>>();
+		byte[] bytes =  zk.getData(ZkConf.HISTORIC_SEND, false, null);
+		if(bytes != null) {
+			historicSendNodesDesconnected = (Map<String, List<String>>) Serializer.toObject(bytes);			
+		}
+		
+		return historicSendNodesDesconnected;
+	}
+
+	private static List<String> getDatanodesDesconnected() throws KeeperException, InterruptedException, IOException, ClassNotFoundException {
+		List<String> nodesDesconnected = new ArrayList<String>();
+		byte[] bytes =  zk.getData(ZkConf.DATANODES_DESCONNECTED, false, null);
+		if(bytes != null) {
+			nodesDesconnected = (List<String>) Serializer.toObject(bytes);			
+		}
+		
+		return nodesDesconnected;
+	}
+	
+	private static void clear(){
+		if(!historicSendDatanodesDesconnected.isEmpty()){
+			historicSendDatanodesDesconnected.clear();
+		}
+		
+		if(!managerDatanodesResponding.isEmpty()){
+			managerDatanodesResponding.clear();
+		}
+		
+		if(!datanodesDesconnected.isEmpty()){
+			datanodesDesconnected.clear();
+		}
+	}
+	
 }

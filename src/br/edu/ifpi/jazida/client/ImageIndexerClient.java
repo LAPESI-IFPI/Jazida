@@ -47,7 +47,7 @@ public class ImageIndexerClient implements ImageIndexer {
 	}
 	
 	private void loadProxy() {
-		datanodes = ListsManager.getDataNodes();
+		datanodes = ListsManager.getDatanodes();
 		if (datanodes.size() == 0)
 			throw new NoNodesAvailableException("Nenhum DataNode conectado ao ClusterService.");
 		
@@ -82,7 +82,7 @@ public class ImageIndexerClient implements ImageIndexer {
 		
 		loadProxy();
 		try{
-			NodeStatus node = ListsManager.nextNode();
+			NodeStatus node = ListsManager.nextDatanode();
 	
 			IImageIndexerProtocol proxy = proxyMap.get(node.getHostname());
 			IntWritable result = proxy.addImage(new MetaDocumentWritable(metaDocument),

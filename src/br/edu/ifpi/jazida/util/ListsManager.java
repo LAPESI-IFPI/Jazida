@@ -197,7 +197,7 @@ public class ListsManager {
 						}
 					}
 					
-					Thread.sleep(3500);
+					Thread.sleep(3000);
 					nodesExists.clear();					
 					
 					List<String> listNodesResponding = managerDatanodesResponding.get(hostNameDesc);
@@ -242,7 +242,6 @@ public class ListsManager {
 	public synchronized static void managerNodesChanged(String hostName, NodeStatus nodeLocal) {
 		try{
 			
-			// Verificar aqui !!!
 			System.out.println("managerNodesChanged---------------------");
 			System.out.println("historicSendDatanodesDesconnected: " + historicSendDatanodesDesconnected);
 			System.out.println("getHistoricSendDatanodesDesconnected(): " + getHistoricSendDatanodesDesconnected());
@@ -251,9 +250,15 @@ public class ListsManager {
 			System.out.println("nodesDesconnected: " + datanodesDesconnected);
 			System.out.println("getDatanodesDisconnected(): " + getDatanodesDisconnected());
 			System.out.println("managerNodesChanged---------------------");
+			String path = ZkConf.DATANODES_PATH + "/" + hostName;
 			
+			
+			List<String> listSend = getListNodeSendReply(hostName);
+			if(listSend.contains(HOSTNAME)){
+				zk.exists(path, true);
+			}
+		
 			if(hostName.equals(HOSTNAME)){
-				String path = ZkConf.DATANODES_PATH + "/" + HOSTNAME;
 				managerDatanodesResponding = getManagerDatanodesResponding();
 				
 				byte[] bytes = zk.getData(path,	true, null);
@@ -266,14 +271,14 @@ public class ListsManager {
 					managerDatanodesResponding.remove(datanode.getHostname());
 				
 				nodeLocal.setNodesResponding(datanode.getNodesResponding());
-				zk.setData(ZkConf.MANAGER_NODES_RESPONDING, Serializer.fromObject((Serializable) managerDatanodesResponding), -1);
-				
+				zk.setData(ZkConf.MANAGER_NODES_RESPONDING, Serializer.fromObject((Serializable) managerDatanodesResponding), -1);					
 			}
 			
+
 			if(nodeLocal.getNodesResponding().size() > 0){
 				LOG.info("Este datanode esta respondendo pelo(s): " + nodeLocal.getNodesResponding());
 			}
-			
+					
 			clear();
 			System.out.println();
 			System.out.println("managerNodesChanged----------------");

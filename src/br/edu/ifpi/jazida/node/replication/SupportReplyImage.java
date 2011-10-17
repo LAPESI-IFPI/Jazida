@@ -3,6 +3,7 @@ package br.edu.ifpi.jazida.node.replication;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -137,53 +138,49 @@ public class SupportReplyImage {
 				}
 			}
 			
-			try {
-				for (final NodeStatus nodeStatus : nodesReplyReceive) {
-					if(getDiretory(nodeStatus.getHostname()) != null){
-						Future<IntWritable> request = threadPool.submit(new Callable<IntWritable>() {
-							@Override
-							public IntWritable call() throws Exception {
-								IndexReader reader = IndexReader.open(getDiretory(nodeStatus.getHostname()));
-								int numDocs = reader.numDocs();
-								reader.close();
-								
-								ISupportIndexImageProtocol proxy = supportProxy.get(nodeStatus.getHostname());
-								return proxy.checkIndexImage(new IntWritable(numDocs));
-							}
-						});
-						
-						IntWritable returnCode = request.get(3500, TimeUnit.MILLISECONDS);
-						if(ReturneMessageJazida.getReturnMessage(returnCode.get()) == ReturneMessageJazida.REPLY_OUTDATED){
-							LOG.info("Atualizando réplica de imagem do "+ nodeStatus.getHostname() + ".");
-							new SupportReplyImage().startUpdateIndexReply(nodeStatus.getAddress(), getDiretory(nodeStatus.getHostname()),
-									DataNodeConf.DATANODE_HOSTNAME);
-						}else if(ReturneMessageJazida.getReturnMessage(returnCode.get()) == ReturneMessageJazida.REPLY_UPDATED){
-							LOG.info("Réplica de imagem do "+ nodeStatus.getHostname() + " atualizada.");
-						}			
-						
-					} else {
-						String pathDir = PathJazida.IMAGE_INDEX_REPLY.getValue();
-						createIndexIfNotExists(new File(pathDir + "/" + nodeStatus.getHostname()));
-						LOG.info("Restaurando réplica de imagem do "+ nodeStatus.getHostname() + ".");
-						new SupportReplyImage().startRestoreIndexReply(nodeStatus.getAddress(), DataNodeConf.DATANODE_HOSTNAME);
-					}
+			for (final NodeStatus nodeStatus : nodesReplyReceive) {
+				if(getDiretory(nodeStatus.getHostname()) != null){
+					Future<IntWritable> request = threadPool.submit(new Callable<IntWritable>() {
+						@Override
+						public IntWritable call() throws Exception {
+							IndexReader reader = IndexReader.open(getDiretory(nodeStatus.getHostname()));
+							int numDocs = reader.numDocs();
+							reader.close();
+							
+							ISupportIndexImageProtocol proxy = supportProxy.get(nodeStatus.getHostname());
+							return proxy.checkIndexImage(new IntWritable(numDocs));
+						}
+					});
+					
+					IntWritable returnCode = request.get(3500, TimeUnit.MILLISECONDS);
+					if(ReturneMessageJazida.getReturnMessage(returnCode.get()) == ReturneMessageJazida.REPLY_OUTDATED){
+						LOG.info("Atualizando réplica de imagem do "+ nodeStatus.getHostname() + ".");
+						new SupportReplyImage().startUpdateIndexReply(nodeStatus.getAddress(), getDiretory(nodeStatus.getHostname()),
+								DataNodeConf.DATANODE_HOSTNAME);
+					}else if(ReturneMessageJazida.getReturnMessage(returnCode.get()) == ReturneMessageJazida.REPLY_UPDATED){
+						LOG.info("Réplica de imagem do "+ nodeStatus.getHostname() + " atualizada.");
+					}			
+					
+				} else {
+					String pathDir = PathJazida.IMAGE_INDEX_REPLY.getValue();
+					createIndexIfNotExists(new File(pathDir + "/" + nodeStatus.getHostname()));
+					LOG.info("Restaurando réplica de imagem do "+ nodeStatus.getHostname() + ".");
+					new SupportReplyImage().startRestoreIndexReply(nodeStatus.getAddress(), DataNodeConf.DATANODE_HOSTNAME);
 				}
-				
+			}
 			
+			} catch (ConcurrentModificationException e) {
+				LOG.info("Reordenando listas.");
 			} catch (InterruptedException e) {
 				LOG.error(e.fillInStackTrace(), e);
 			} catch (ExecutionException e) {
-				LOG.error(e.fillInStackTrace(), e);
+				LOG.info("Reordenando listas.");
 			} catch (TimeoutException e) {
 				LOG.error(e.fillInStackTrace(), e);
 			} catch (Throwable e){
+				LOG.error("Falha no metodo: checkRepliesImage()");
 				LOG.error(e.fillInStackTrace(), e);
 			}
-			
-		}catch (Throwable e) {
-			LOG.error("Falha no metodo: checkRepliesImage()");
-			LOG.error(e.fillInStackTrace(), e);
-		}		
 	}
 	
 	private Directory getDiretory(String hostName) throws IOException {

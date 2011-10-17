@@ -3,6 +3,7 @@ package br.edu.ifpi.jazida.node.replication;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,18 +53,23 @@ public class ImageReplicationNode {
 	}
 	
 	private void loadProxy(){
-		datanodes = ListsManager.getDatanodesReplication();
-		if (datanodes.size() == 0){
-			LOG.info("Apenas um datanode conectado ao cluster");
-		}
-		else {
-			for (NodeStatus node : datanodes) {
-				final InetSocketAddress socketAdress = new InetSocketAddress(node.getAddress(), node.getImageReplicationServerPort());
-				IImageReplicationProtocol replicationProxy = this.getImageReplicationServer(socketAdress);
-				if(replicationProxy != null)
-					proxyMap.put(node.getHostname(), replicationProxy);
+		try{
+			datanodes = ListsManager.getDatanodesReplication();
+			if (datanodes.size() == 0){
+				LOG.info("Apenas um datanode conectado ao cluster");
 			}
-		threadPool = Executors.newCachedThreadPool();
+			else {
+				for (NodeStatus node : datanodes) {
+					final InetSocketAddress socketAdress = new InetSocketAddress(node.getAddress(), node.getImageReplicationServerPort());
+					IImageReplicationProtocol replicationProxy = this.getImageReplicationServer(socketAdress);
+					if(replicationProxy != null)
+						proxyMap.put(node.getHostname(), replicationProxy);
+				}
+			threadPool = Executors.newCachedThreadPool();
+			}
+		
+		} catch (ConcurrentModificationException e) {
+			LOG.info("Reordenando listas.");
 		}
 	}
 	
@@ -109,10 +115,12 @@ public class ImageReplicationNode {
 				}		
 			}
 		
+		} catch (ConcurrentModificationException e) {
+			LOG.info("Reordenando listas.");
 		} catch (InterruptedException e) {
 			LOG.error(e.fillInStackTrace(), e);
 		} catch (ExecutionException e) {
-			LOG.error(e.fillInStackTrace(), e);
+			LOG.info("Reordenando listas.");
 		} catch (Throwable e){
 			LOG.error(e.fillInStackTrace(), e);
 		}
@@ -145,10 +153,12 @@ public class ImageReplicationNode {
 				}				
 			}
 		
+		} catch (ConcurrentModificationException e) {
+			LOG.info("Reordenando listas.");
 		} catch (InterruptedException e) {
 			LOG.error(e.fillInStackTrace(), e);
 		} catch (ExecutionException e) {
-			LOG.error(e.fillInStackTrace(), e);
+			LOG.info("Reordenando listas.");
 		} catch (TimeoutException e) {
 			LOG.error(e.fillInStackTrace(), e);
 		} catch (Throwable e){
@@ -182,10 +192,12 @@ public class ImageReplicationNode {
 				}		
 			}
 		
+		} catch (ConcurrentModificationException e) {
+			LOG.info("Reordenando listas.");
 		} catch (InterruptedException e) {
 			LOG.error(e.fillInStackTrace(), e);
 		} catch (ExecutionException e) {
-			LOG.error(e.fillInStackTrace(), e);
+			LOG.info("Reordenando listas.");
 		} catch (TimeoutException e) {
 			LOG.error(e.fillInStackTrace(), e);
 		} catch (Throwable e){

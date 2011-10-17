@@ -122,7 +122,8 @@ public class RestoreReplyWritable implements Writable {
 		
 		try{
 			for (String name : directory.listAll()) {
-				directory.deleteFile(name);
+				if(directory.fileExists(name))
+					directory.deleteFile(name);
 			}
 		} catch(IOException e){
 			return;

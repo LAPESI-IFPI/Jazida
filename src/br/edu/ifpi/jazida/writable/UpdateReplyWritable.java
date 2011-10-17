@@ -21,6 +21,7 @@ public class UpdateReplyWritable implements Writable {
 	private Directory directory;
 	private String hostName;
 	private String[] fileNames;
+	private List<String> filesExists = new ArrayList<String>();
 	private String pathReply;
 	private List<String> listUpdade = new ArrayList<String>();
 
@@ -48,8 +49,12 @@ public class UpdateReplyWritable implements Writable {
 		for (int i = 0; i < sizeFileArray; i++) {
 			fileNames[i] = in.readUTF();
 		}
+		int sizeFilesExists = in.readInt();
+		for(int i=0; i< sizeFilesExists; i++){
+			filesExists.add(in.readUTF());
+		}
 
-		updateReply(fileNames);			
+		updateReply(filesExists);			
 		
 		for (String fileName : fileNames) {
 			IndexOutput io = null;
@@ -81,7 +86,7 @@ public class UpdateReplyWritable implements Writable {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		loadFileNamesUpdate(fileNames);
+		loadFileNamesUpdates(fileNames);
 		int size = listUpdade.size();
 		out.writeInt(size);
 		out.writeUTF(hostName);
@@ -89,6 +94,11 @@ public class UpdateReplyWritable implements Writable {
 
 		for (String fileName : listUpdade) {
 			out.writeUTF(fileName);
+		}
+		
+		out.writeInt(filesExists.size());
+		for (String fileNameExists: filesExists){
+			out.writeUTF(fileNameExists);
 		}
 		
 		try{
@@ -129,7 +139,7 @@ public class UpdateReplyWritable implements Writable {
 				
 	}
 
-	public List<String> loadFileNamesUpdate(String[] fileNames)
+	public List<String> loadFileNamesUpdates(String[] fileNames)
 			throws IOException {
 
 		int i = 0;
@@ -142,11 +152,14 @@ public class UpdateReplyWritable implements Writable {
 					i++;
 				} 
 				
-				else {	
+				else {
 					for (String fileNameReply : fileNames) {
-						if (fileNameIndex.equals(fileNameReply)){
-							exists = true;
-							break;
+						if (!fileNameIndex.equals("segments.gen")){
+							if (fileNameIndex.equals(fileNameReply)){
+								exists = true;
+								filesExists.add(fileNameReply);
+								break;
+							}
 						}
 					}
 				
@@ -164,37 +177,17 @@ public class UpdateReplyWritable implements Writable {
 		return listUpdade;
 	}
 
-	public void updateReply(String[] arrayFileNamesIndex) throws IOException {
-		String fileDelete = "";
-
-		boolean exists = false;
-		for (String fileIndex : arrayFileNamesIndex) {			
-			
-			if (fileIndex.equals("segments.gen")){
-				fileDelete = fileIndex;
-			}
-			
-			else{
-				for (String fileReply : directory.listAll()) {
-					
+	public void updateReply(List<String> filesExists) throws IOException {
+		String fileDelete = "segments.gen";
+		directory.deleteFile(fileDelete);
+		for (String fileReply : directory.listAll()) {
+			if(!filesExists.contains(fileReply)){
+				if(directory.fileExists(fileReply)){
 					fileDelete = fileReply;
-					if (fileIndex.equals(fileReply)){
-						exists = true;
-						break;
-					}
-	
+					directory.deleteFile(fileDelete);
 				}
 			}
-
-			if ((exists == false)) {
-				directory.deleteFile(fileDelete);
-			}
-
-			exists = false;
-			
-			if(directory.listAll().length == 0){
-				return;
-			}
+				
 		}		
 	}
 

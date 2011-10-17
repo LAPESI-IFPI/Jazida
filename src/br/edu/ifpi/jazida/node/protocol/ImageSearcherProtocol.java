@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 
 import net.semanticmetadata.lire.DocumentBuilder;
@@ -58,20 +59,25 @@ public class ImageSearcherProtocol implements IImageSearchProtocol {
 	
 	@Override
 	public long getProtocolVersion(String arg0, long arg1) throws IOException {
-		int qtd = node.getNodesResponding().size();
-		if(qtdResponding != qtd){
-			qtdResponding = qtd;
-			if(qtdResponding > 0){
-				int cont = 0;
-				for(String hostName: node.getNodesResponding()){
-					if(new File(PathJazida.IMAGE_INDEX_REPLY.getValue() + "/" + hostName).canRead()){
-						cont++;
+		try{
+			int qtd = node.getNodesResponding().size();
+			if(qtdResponding != qtd){
+				qtdResponding = qtd;
+				if(qtdResponding > 0){
+					int cont = 0;
+					for(String hostName: node.getNodesResponding()){
+						if(new File(PathJazida.IMAGE_INDEX_REPLY.getValue() + "/" + hostName).canRead()){
+							cont++;
+						}
 					}
+					searchers = new IndexSearcher[cont + 1];
+					createMultiSeacher();
 				}
-				searchers = new IndexSearcher[cont + 1];
-				createMultiSeacher();
 			}
+		} catch (ConcurrentModificationException e) {
+			LOG.info("Reordenando listas.");
 		}
+		
 		return 0;
 	}
 	
@@ -431,6 +437,9 @@ public class ImageSearcherProtocol implements IImageSearchProtocol {
 			}
 			multiSearcher = new ParallelMultiSearcher(searchers);
 			System.out.println(multiSearcher.maxDoc());
+			
+		} catch (ConcurrentModificationException e) {
+			LOG.info("Reordenando listas.");
 		} catch (CorruptIndexException e) {
 			e.printStackTrace();
 		} catch (IOException e) {

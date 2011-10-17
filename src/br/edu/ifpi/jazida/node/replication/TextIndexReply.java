@@ -166,9 +166,9 @@ public class TextIndexReply {
 			}
 			
 		} catch (CorruptIndexException e) {
-			e.printStackTrace();
+			LOG.error(e.fillInStackTrace(), e);
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOG.error(e.fillInStackTrace(), e);
 		}
 		indexReader.close();
 		return null;

@@ -4,6 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,18 +54,22 @@ public class TextIndexerClient implements TextIndexer {
 	}
 
 	private void loadProxy() {
-		datanodes = ListsManager.getDatanodes();
-		if (datanodes.size() == 0)
-			throw new NoNodesAvailableException("Nenhum DataNode conectado ao ClusterService.");
-		
-		for (NodeStatus node : datanodes) {
-			final InetSocketAddress socketAdress = new InetSocketAddress(node.getAddress(),
-																		 node.getTextIndexerServerPort());
-			ITextIndexerProtocol textIndexerProxy = getTextIndexerServer(socketAdress);
+		try{
+			datanodes = ListsManager.getDatanodes();
+			if (datanodes.size() == 0)
+				throw new NoNodesAvailableException("Nenhum DataNode conectado ao ClusterService.");
 			
-			if(textIndexerProxy != null){
-				proxyMap.put(node.getHostname(), textIndexerProxy);	
+			for (NodeStatus node : datanodes) {
+				final InetSocketAddress socketAdress = new InetSocketAddress(node.getAddress(),
+																			 node.getTextIndexerServerPort());
+				ITextIndexerProtocol textIndexerProxy = getTextIndexerServer(socketAdress);
+				
+				if(textIndexerProxy != null){
+					proxyMap.put(node.getHostname(), textIndexerProxy);	
+				}
 			}
+		} catch (ConcurrentModificationException e) {
+			LOG.info("Reordenando listas.");
 		}
 	}
 
@@ -100,6 +105,8 @@ public class TextIndexerClient implements TextIndexer {
 			
 			return ReturnMessage.getReturnMessage(result.get());
 		
+		} catch (ConcurrentModificationException e) {
+			LOG.info("Reordenando listas.");
 		} catch (Throwable e){
 			e.getStackTrace();
 		}
@@ -132,10 +139,12 @@ public class TextIndexerClient implements TextIndexer {
 				}
 			}			
 		
+		} catch (ConcurrentModificationException e) {
+			LOG.info("Reordenando listas.");
 		} catch (InterruptedException e) {
 			LOG.error(e);
 		} catch (ExecutionException e) {
-			LOG.error(e);
+			LOG.info("Reordenando listas.");
 		} catch (TimeoutException e) {
 			LOG.error(e);
 		} catch (Throwable e){
@@ -169,10 +178,12 @@ public class TextIndexerClient implements TextIndexer {
 				}
 			}			
 		
+		} catch (ConcurrentModificationException e) {
+			LOG.info("Reordenando listas.");
 		} catch (InterruptedException e) {
 			LOG.error(e);
 		} catch (ExecutionException e) {
-			LOG.error(e);
+			LOG.info("Reordenando listas.");
 		} catch (TimeoutException e) {
 			LOG.error(e);
 		} catch (Throwable e){

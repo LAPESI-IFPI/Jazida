@@ -139,9 +139,9 @@ public class TextReplicationNodeTest {
 		MetaDocument metaDoc4 = new MetaDocumentBuilder().id("4")
 				.title("AMERICANA_M2_TXT_FILE").author("autor04").build();
 
-		
-		textIndexerClient.addText(metaDoc, conteudoDoArquivo(ALICE_TXT_FILE));
+	
 		textIndexerClient.addText(metaDoc2, conteudoDoArquivo(OPALA_FILE));
+		textIndexerClient.addText(metaDoc, conteudoDoArquivo(ALICE_TXT_FILE));
 		textIndexerClient.addText(metaDoc3,	conteudoDoArquivo(AMERICA_M_TXT_FILE));
 		textIndexerClient.addText(metaDoc4,	conteudoDoArquivo(AMERICANA_M2_TXT_FILE));
 

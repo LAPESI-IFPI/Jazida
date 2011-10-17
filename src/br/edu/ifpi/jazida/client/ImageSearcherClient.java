@@ -7,6 +7,7 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -145,8 +146,11 @@ public class ImageSearcherClient implements SearcherImage {
 		} catch (InterruptedException e) {
 			LOG.error(e);
 			return new SearchResult(ReturnMessage.UNEXPECTED_SEARCH_ERROR, null);
+		}catch (ConcurrentModificationException e) {
+			LOG.info("Reordenando listas.");
+			return new SearchResult(ReturnMessage.UNEXPECTED_SEARCH_ERROR, null);
 		} catch (ExecutionException e) {
-			LOG.error(e);
+			LOG.info("Reordenando listas.");
 			return new SearchResult(ReturnMessage.UNEXPECTED_SEARCH_ERROR, null);
 		} catch (TimeoutException e) {
 			LOG.error(e);

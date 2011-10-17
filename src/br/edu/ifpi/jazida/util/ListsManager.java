@@ -151,7 +151,7 @@ public class ListsManager {
 					datanodesDesconnected.add(hostNameDesc);					
 				}
 				
-				List<String> listSend = getListNodeSendReply(hostNameDesc);
+				List<String> listSend = getListDatanodesSendReply(hostNameDesc);
 				if(!historicSendDatanodesDesconnected.containsKey(hostNameDesc)){
 					historicSendDatanodesDesconnected.put(hostNameDesc, listSend);
 				}
@@ -197,7 +197,7 @@ public class ListsManager {
 						}
 					}
 					
-					Thread.sleep(3000);
+					Thread.sleep(3500);
 					nodesExists.clear();					
 					
 					List<String> listNodesResponding = managerDatanodesResponding.get(hostNameDesc);
@@ -242,18 +242,9 @@ public class ListsManager {
 	public synchronized static void managerNodesChanged(String hostName, NodeStatus nodeLocal) {
 		try{
 			
-			System.out.println("managerNodesChanged---------------------");
-			System.out.println("historicSendDatanodesDesconnected: " + historicSendDatanodesDesconnected);
-			System.out.println("getHistoricSendDatanodesDesconnected(): " + getHistoricSendDatanodesDesconnected());
-			System.out.println("managerDatanodesResponding:  " + managerDatanodesResponding);
-			System.out.println("getManagerDatanodesResponding():  " + getManagerDatanodesResponding());
-			System.out.println("nodesDesconnected: " + datanodesDesconnected);
-			System.out.println("getDatanodesDisconnected(): " + getDatanodesDisconnected());
-			System.out.println("managerNodesChanged---------------------");
 			String path = ZkConf.DATANODES_PATH + "/" + hostName;
-			
-			
-			List<String> listSend = getListNodeSendReply(hostName);
+						
+			List<String> listSend = getListDatanodesSendReply(hostName);
 			if(listSend.contains(HOSTNAME)){
 				zk.exists(path, true);
 			}
@@ -275,22 +266,13 @@ public class ListsManager {
 			}
 			
 
-			if(nodeLocal.getNodesResponding().size() > 0){
+			if (nodeLocal.getNodesResponding().size() > 0){
 				LOG.info("Este datanode esta respondendo pelo(s): " + nodeLocal.getNodesResponding());
+			} else {
+				LOG.info("Este datanode não está respondendo por nenhum outro.");
 			}
 					
 			clear();
-			System.out.println();
-			System.out.println("managerNodesChanged----------------");
-			System.out.println("historicSendNodesDesconnected: " + historicSendDatanodesDesconnected);
-			System.out.println("getHistoricSendDatanodesDesconnected(): " + getHistoricSendDatanodesDesconnected());
-			System.out.println("nodesDesconnected: " + datanodesDesconnected);
-			System.out.println("getDatanodesDisconnected(): " + getDatanodesDisconnected());
-			System.out.println("managerDatanodesResponding:  " + managerDatanodesResponding);
-			System.out.println("getManagerDatanodesResponding():  " + getManagerDatanodesResponding());
-			System.out.println("respondendo: " + nodeLocal.getNodesResponding());
-			System.out.println("managerNodesChanged----------------");
-			
 		
 		} catch (KeeperException e) {
 			LOG.error(e.getMessage(), e);
@@ -305,16 +287,6 @@ public class ListsManager {
 
 	public synchronized static void managerDatanodesCreated(String hostName, NodeStatus nodeLocal) {
 		try{
-			
-			System.out.println("managerDatanodesCreated---------------------");
-			System.out.println("historicSendNodesDesconnected: " + historicSendDatanodesDesconnected);
-			System.out.println("getHistoricSendDatanodesDesconnected(): " + getHistoricSendDatanodesDesconnected());
-			System.out.println("managerDatanodesResponding:  " + managerDatanodesResponding);
-			System.out.println("getManagerDatanodesResponding():  " + getManagerDatanodesResponding());
-			System.out.println("nodesDesconnected: " + datanodesDesconnected);
-			System.out.println("getDatanodesDisconnected(): " + getDatanodesDisconnected());
-			System.out.println("managerDatanodesCreated---------------------");
-			
 			
 			if(nodeLocal.getNodesResponding().contains(hostName)){
 				String path = ZkConf.DATANODES_PATH + "/" + HOSTNAME;				
@@ -348,25 +320,12 @@ public class ListsManager {
 				} 	
 				
 				clear();
-				System.out.println();
-				System.out.println("managerDatanodesCreated---------------------");
-				System.out.println("historicSendDatanodesDesconnected: " + historicSendDatanodesDesconnected);
-				System.out.println("getHistoricSendDatanodesDesconnected(): " + getHistoricSendDatanodesDesconnected());
-				System.out.println("managerDatanodesResponding:  " + managerDatanodesResponding);
-				System.out.println("getManagerDatanodesResponding():  " + getManagerDatanodesResponding());
-				System.out.println("nodesDesconnected: " + datanodesDesconnected);
-				System.out.println("getDatanodesDisconnected(): " + getDatanodesDisconnected());
-				System.out.println("managerDatanodesCreated----------------------");
-				System.out.println();
-				
 			}
 		} catch (KeeperException e) {
 			LOG.error(e.getMessage(), e);
 		} catch (InterruptedException e) {
 			LOG.error(e.getMessage(), e);
 		} catch (IOException e) {
-			LOG.error(e.getMessage(), e);
-		} catch (ClassNotFoundException e) {
 			LOG.error(e.getMessage(), e);
 		}
 	}
@@ -460,7 +419,7 @@ public class ListsManager {
 		return datanode;
 	}
 	
-	private static List<String> getListNodeSendReply(String hostName){
+	private static List<String> getListDatanodesSendReply(String hostName){
 		List<String> nodes = new ArrayList<String>();
 		
 		int idNode = getIdDatanode(hostName);

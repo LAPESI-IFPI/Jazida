@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,19 +48,24 @@ public class ImageIndexerClient implements ImageIndexer {
 	}
 	
 	private void loadProxy() {
-		datanodes = ListsManager.getDatanodes();
-		if (datanodes.size() == 0)
-			throw new NoNodesAvailableException("Nenhum DataNode conectado ao ClusterService.");
-		
-		for (NodeStatus node : datanodes) {
-			final InetSocketAddress socketAdress = new InetSocketAddress(node.getAddress(),
-																		 node.getImageIndexerServerPort());
-			IImageIndexerProtocol imageIndexerProtocol = getImageIndexerProxy(socketAdress);
+		try{
+			datanodes = ListsManager.getDatanodes();
+			if (datanodes.size() == 0)
+				throw new NoNodesAvailableException("Nenhum DataNode conectado ao ClusterService.");
 			
-			if(imageIndexerProtocol != null){
-				proxyMap.put(node.getHostname(), imageIndexerProtocol);	
+			for (NodeStatus node : datanodes) {
+				final InetSocketAddress socketAdress = new InetSocketAddress(node.getAddress(),
+																			 node.getImageIndexerServerPort());
+				IImageIndexerProtocol imageIndexerProtocol = getImageIndexerProxy(socketAdress);
+				
+				if(imageIndexerProtocol != null){
+					proxyMap.put(node.getHostname(), imageIndexerProtocol);	
+				}
 			}
+		} catch (ConcurrentModificationException e) {
+			LOG.info("Reordenando listas.");
 		}
+			
 	}
 	
 	private IImageIndexerProtocol getImageIndexerProxy(final InetSocketAddress endereco) {
@@ -93,6 +99,8 @@ public class ImageIndexerClient implements ImageIndexer {
 			
 			return ReturnMessage.getReturnMessage(result.get());
 			
+		} catch (ConcurrentModificationException e) {
+			LOG.info("Reordenando listas.");
 		} catch (Throwable e){
 			e.getStackTrace();
 		}
@@ -124,10 +132,12 @@ public class ImageIndexerClient implements ImageIndexer {
 				}
 			}			
 		
+		} catch (ConcurrentModificationException e) {
+			LOG.info("Reordenando listas.");
 		} catch (InterruptedException e) {
 			LOG.error(e);
 		} catch (ExecutionException e) {
-			LOG.error(e);
+			LOG.info("Reordenando listas.");
 		} catch (TimeoutException e) {
 			LOG.error(e);
 		} catch (Throwable e){
@@ -172,10 +182,12 @@ public class ImageIndexerClient implements ImageIndexer {
 				}
 			}			
 		
+		} catch (ConcurrentModificationException e) {
+			LOG.info("Reordenando listas.");
 		} catch (InterruptedException e) {
 			LOG.error(e);
 		} catch (ExecutionException e) {
-			LOG.error(e);
+			LOG.info("Reordenando listas.");
 		} catch (TimeoutException e) {
 			LOG.error(e);
 		} catch (Throwable e){

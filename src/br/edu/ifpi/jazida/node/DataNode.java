@@ -19,8 +19,8 @@ import br.edu.ifpi.jazida.cluster.ClusterService;
 import br.edu.ifpi.jazida.node.protocol.ImageIndexerProtocol;
 import br.edu.ifpi.jazida.node.protocol.ImageReplicationProtocol;
 import br.edu.ifpi.jazida.node.protocol.ImageSearcherProtocol;
-import br.edu.ifpi.jazida.node.protocol.SupportIndexImageProtocol;
-import br.edu.ifpi.jazida.node.protocol.SupportIndexTextProtocol;
+import br.edu.ifpi.jazida.node.protocol.SupportReplyImageProtocol;
+import br.edu.ifpi.jazida.node.protocol.SupportReplyTextProtocol;
 import br.edu.ifpi.jazida.node.protocol.TextIndexerProtocol;
 import br.edu.ifpi.jazida.node.protocol.TextReplicationProtocol;
 import br.edu.ifpi.jazida.node.protocol.TextSearchableProtocol;
@@ -191,14 +191,14 @@ public class DataNode {
 		imageReplicationServer.start(false);
 		
 		LOG.info("Iniciando o protocolo de RPC TextReplicationSupportServer");
-		textReplicationSupportServer = new RPCServer(new SupportIndexTextProtocol(), 
+		textReplicationSupportServer = new RPCServer(new SupportReplyTextProtocol(), 
 													node.getAddress(), 
 													node.getTextReplicationSupportServerPort());
 		
 		textReplicationSupportServer.start(false);
 		
 		LOG.info("Iniciando o protocolo de RPC ImageReplicationSupportServer");
-		imageReplicationSupportServer = new RPCServer(new SupportIndexImageProtocol(), 
+		imageReplicationSupportServer = new RPCServer(new SupportReplyImageProtocol(), 
 													node.getAddress(), 
 													node.getImageReplicationSupportServerPort());
 		

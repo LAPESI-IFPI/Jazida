@@ -42,7 +42,7 @@ public class TextReplicationNodeTest {
 				.getValue())));
 		assertTrue(FileUtilsForTest.deleteDir(new File(Path.TEXT_BACKUP
 				.getValue())));
-		assertTrue(FileUtilsForTest.deleteDir(new File(PathJazida.TEXT_INDEX_REPLY.getValue())));
+		//assertTrue(FileUtilsForTest.deleteDir(new File(PathJazida.TEXT_INDEX_REPLY.getValue())));
 		
 		datanode = new DataNode();
 		datanode.start(false);

@@ -54,7 +54,7 @@ public class ImageIndexReply {
 	}
 
 
-	public synchronized ReturnMessage addImageReply(MetaDocument metaDocument, BufferedImage image, String hostname,
+	public synchronized ReturnMessage addImageReply(MetaDocument metaDocument, BufferedImage image, String hostName,
 			String IP, long numDocsIndex) throws IOException {
 		
 		DocumentBuilder builder = DocumentBuilderFactory.getCEDDDocumentBuilder();
@@ -65,26 +65,26 @@ public class ImageIndexReply {
 		}
 
 		try {			
-			IndexWriter writer = getIndexWriter(hostname);			
+			IndexWriter writer = getIndexWriter(hostName);			
 			writer.addDocument(metaDocument.getDocument());
 			System.out.println("add reply imagae");
 			long numDocsReply = writer.numDocs();
 			writer.close();
 			
 			if (numDocsIndex > numDocsReply){
-				LOG.info("Atualizando réplica do "+ hostname + "...");
-				new SupportReplyImage().startUpdateIndexReply(IP, getDiretory(hostname), HOSTNAME_LOCAL);
+				LOG.info("Atualizando réplica do "+ hostName + "...");
+				new SupportReplyImage().startUpdateIndexReply(IP, getDiretory(hostName), HOSTNAME_LOCAL);
 				System.out.println("replica atualizada imagem: metodo 1");
 				return ReturnMessage.OUTDATED;
 			}
 		} catch (CorruptIndexException e) {
-			LOG.info("Restaurando réplica de imagem do "+ hostname + "...");
-			Util.deleteDir(new File(pathDir+"/"+hostname));
+			LOG.info("Restaurando réplica de imagem do "+ hostName + "...");
+			Util.deleteDir(new File(pathDir+"/"+hostName));
 			new SupportReplyImage().startRestoreIndexReply(IP, HOSTNAME_LOCAL);
 			return ReturnMessage.UNEXPECTED_INDEX_ERROR;
 		} catch (IOException e) {
-			LOG.info("Restaurando réplica de imagem do "+ hostname + "...");
-			Util.deleteDir(new File(pathDir+"/"+hostname));
+			LOG.info("Restaurando réplica de imagem do "+ hostName + "...");
+			Util.deleteDir(new File(pathDir+"/"+hostName));
 			new SupportReplyImage().startRestoreIndexReply(IP, HOSTNAME_LOCAL);
 			return ReturnMessage.UNEXPECTED_INDEX_ERROR;
 		} 
@@ -92,11 +92,11 @@ public class ImageIndexReply {
 		return ReturnMessage.SUCCESS;
 	}
 	
-	public synchronized ReturnMessage delImageReply(String id, String hostname, String IP) throws IOException {
+	public synchronized ReturnMessage delImageReply(String id, String hostName, String IP) throws IOException {
 		IndexReader reader;
 		Directory dir = null;
 		try {
-			dir = getDiretory(hostname);
+			dir = getDiretory(hostName);
 			reader = IndexReader.open(dir, false);
 
 			for (int i = 0; i < reader.maxDoc(); i++) {
@@ -116,13 +116,13 @@ public class ImageIndexReply {
 			
 			return ReturnMessage.SUCCESS;
 		} catch (CorruptIndexException e) {
-			LOG.info("Restaurando réplica de imagem do "+ hostname + "...");
-			Util.deleteDir(new File(pathDir+"/"+hostname));
+			LOG.info("Restaurando réplica de imagem do "+ hostName + "...");
+			Util.deleteDir(new File(pathDir+"/"+hostName));
 			new SupportReplyImage().startRestoreIndexReply(IP, HOSTNAME_LOCAL);
 			return ReturnMessage.UNEXPECTED_INDEX_ERROR;
 		} catch (IOException e) {
-			LOG.info("Restaurando réplica de imagem do "+ hostname + "...");
-			Util.deleteDir(new File(pathDir+"/"+hostname));
+			LOG.info("Restaurando réplica de imagem do "+ hostName + "...");
+			Util.deleteDir(new File(pathDir+"/"+hostName));
 			new SupportReplyImage().startRestoreIndexReply(IP, HOSTNAME_LOCAL);
 			return ReturnMessage.UNEXPECTED_INDEX_ERROR;
 		} 
@@ -130,9 +130,9 @@ public class ImageIndexReply {
 	}
 	
 	public synchronized ReturnMessage updateImageReply(String id,
-			Map<String, String> updates, String hostname, String IP) throws IOException {
+			Map<String, String> updates, String hostName, String IP) throws IOException {
 		try {
-			Directory dir = getDiretory(hostname);
+			Directory dir = getDiretory(hostName);
 			IndexSearcher is = new IndexSearcher(dir, false);
 
 				Query idQuery = new TermQuery(new Term(Metadata.ID.getValue(),
@@ -154,35 +154,35 @@ public class ImageIndexReply {
 				}
 				is.close();
 				
-				if (!this.delImageReply(id, hostname, IP).equals(ReturnMessage.SUCCESS)) {
+				if (!this.delImageReply(id, hostName, IP).equals(ReturnMessage.SUCCESS)) {
 					return ReturnMessage.ID_NOT_FOUND;
 				}
 
-				IndexWriter writer = getIndexWriter(hostname);
+				IndexWriter writer = getIndexWriter(hostName);
 				writer.addDocument(doc);
 				writer.optimize();
 				writer.close();
 				System.out.println("atualizou reply image");
 				return ReturnMessage.SUCCESS;
 		} catch (CorruptIndexException e) {
-			LOG.info("Restaurando réplica de imagem do "+ hostname + "...");
-			Util.deleteDir(new File(pathDir+"/"+hostname));
+			LOG.info("Restaurando réplica de imagem do "+ hostName + "...");
+			Util.deleteDir(new File(pathDir+"/"+hostName));
 			new SupportReplyImage().startRestoreIndexReply(IP, HOSTNAME_LOCAL);
 			return ReturnMessage.UNEXPECTED_INDEX_ERROR;
 		} catch (IOException e) {
-			LOG.info("Restaurando réplica de imagem do "+ hostname + "...");
-			Util.deleteDir(new File(pathDir+"/"+hostname));
+			LOG.info("Restaurando réplica de imagem do "+ hostName + "...");
+			Util.deleteDir(new File(pathDir+"/"+hostName));
 			new SupportReplyImage().startRestoreIndexReply(IP, HOSTNAME_LOCAL);
 			return ReturnMessage.UNEXPECTED_INDEX_ERROR;
 		} 
 	}
 	
-	private IndexWriter getIndexWriter(String hostname) throws CorruptIndexException, LockObtainFailedException, IOException{
-		return new IndexWriter(getDiretory(hostname), ANALYZER,	MaxFieldLength.UNLIMITED);
+	private IndexWriter getIndexWriter(String hostName) throws CorruptIndexException, LockObtainFailedException, IOException{
+		return new IndexWriter(getDiretory(hostName), ANALYZER,	MaxFieldLength.UNLIMITED);
 	}
 
-	private Directory getDiretory(String hostname) throws IOException {
-		Directory dir = FSDirectory.open(new File(pathDir + "/" + hostname));
+	private Directory getDiretory(String hostName) throws IOException {
+		Directory dir = FSDirectory.open(new File(pathDir + "/" + hostName));
 		return dir;
 	}
 

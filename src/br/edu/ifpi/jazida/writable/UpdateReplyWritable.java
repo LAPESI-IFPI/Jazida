@@ -179,7 +179,9 @@ public class UpdateReplyWritable implements Writable {
 
 	public void updateReply(List<String> filesExists) throws IOException {
 		String fileDelete = "segments.gen";
-		directory.deleteFile(fileDelete);
+		if(directory.fileExists(fileDelete))
+				directory.deleteFile(fileDelete);
+		
 		for (String fileReply : directory.listAll()) {
 			if(!filesExists.contains(fileReply)){
 				if(directory.fileExists(fileReply)){

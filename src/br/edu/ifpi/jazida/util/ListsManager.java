@@ -197,7 +197,7 @@ public class ListsManager {
 						}
 					}
 					
-					Thread.sleep(3500);
+					Thread.sleep(2000);
 					nodesExists.clear();					
 					
 					List<String> listNodesResponding = managerDatanodesResponding.get(hostNameDesc);
@@ -226,6 +226,12 @@ public class ListsManager {
 				if(HOSTNAME.equals(leader.getHostname())){
 					zk.setData(ZkConf.MANAGER_NODES_RESPONDING, Serializer.fromObject((Serializable) managerDatanodesResponding), -1);
 				}
+			}
+			
+			List<String> datanodesReceive = getListDatanodesReceiveReply(hostNameDesc);
+			if(datanodesReceive.contains(HOSTNAME)){
+				new SupportReplyText().checkRepliesText(datanodesReplyReceive);
+				new SupportReplyImage().checkRepliesImage(datanodesReplyReceive);
 			}
 			
 		} catch (InterruptedException e) {
@@ -262,7 +268,8 @@ public class ListsManager {
 					managerDatanodesResponding.remove(datanode.getHostname());
 				
 				nodeLocal.setNodesResponding(datanode.getNodesResponding());
-				zk.setData(ZkConf.MANAGER_NODES_RESPONDING, Serializer.fromObject((Serializable) managerDatanodesResponding), -1);					
+				zk.setData(ZkConf.MANAGER_NODES_RESPONDING, Serializer.fromObject((Serializable) managerDatanodesResponding), -1);
+				
 			}
 			
 
@@ -312,7 +319,7 @@ public class ListsManager {
 					zk.setData(ZkConf.DATANODES_DESCONNECTED, Serializer.fromObject((Serializable) datanodesDesconnected), -1);					
 					zk.setData(ZkConf.HISTORIC_SEND, Serializer.fromObject((Serializable) historicSendDatanodesDesconnected), -1);
 					
-					Thread.sleep(2000);
+					//Thread.sleep(2000);
 					if(hostName.equals(HOSTNAME)){
 						new SupportReplyText().checkRepliesText(datanodesReplyReceive);
 						new SupportReplyImage().checkRepliesImage(datanodesReplyReceive);
@@ -383,27 +390,7 @@ public class ListsManager {
 		
 		return datanodes;
 	}
-	
-	private static List<String> getDatanodesDisconnected() {
-		List<String> datanodes = new ArrayList<String>();
-		
-		try {
-			byte[] bytes = zk.getData(ZkConf.DATANODES_DESCONNECTED, false, null);
-			if (bytes != null)
-				datanodes = (List<String>) Serializer.toObject(bytes);
-		} catch (KeeperException e) {
-			LOG.error(e.getMessage(), e);
-		} catch (InterruptedException e) {
-			LOG.error(e.getMessage(), e);
-		} catch (IOException e) {
-			LOG.error(e.getMessage(), e);
-		} catch (ClassNotFoundException e) {
-			LOG.error(e.getMessage(), e);
-		} 
-	
-		return datanodes;
-	}
-	
+
 	private static NodeStatus getDatanodeLeader(String hostNameDesc) throws KeeperException, InterruptedException, IOException, ClassNotFoundException{
 		String path;
 		NodeStatus datanode = null;
@@ -429,6 +416,27 @@ public class ListsManager {
 				idNode++;
 				if(idNode > idLastNode)
 					idNode = idFirstNode;
+					
+				if(idNode != getIdDatanode(hostName))
+					node = cacheMapReplyUtil.get(idNode);
+				
+				if(node != null ) 
+					nodes.add(node.getHostname());
+			}
+		}
+		return nodes;
+	}
+	
+	private static List<String> getListDatanodesReceiveReply(String hostName){
+		List<String> nodes = new ArrayList<String>();
+		
+		int idNode = getIdDatanode(hostName);
+		for(int i=0; i < cacheReplyFrequency; i++){
+			NodeStatus node = null;
+			while(node == null){
+				idNode--;
+				if(idNode == 0)
+					idNode = idLastNode;
 					
 				if(idNode != getIdDatanode(hostName))
 					node = cacheMapReplyUtil.get(idNode);

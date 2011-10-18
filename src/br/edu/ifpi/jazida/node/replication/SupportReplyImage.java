@@ -30,20 +30,20 @@ import org.apache.lucene.store.LockObtainFailedException;
 import org.apache.lucene.util.Version;
 
 import br.edu.ifpi.jazida.node.NodeStatus;
-import br.edu.ifpi.jazida.node.protocol.ISupportIndexImageProtocol;
+import br.edu.ifpi.jazida.node.protocol.ISupportReplyImageProtocol;
 import br.edu.ifpi.jazida.util.DataNodeConf;
 import br.edu.ifpi.jazida.util.PathJazida;
 import br.edu.ifpi.jazida.util.ReturneMessageJazida;
 import br.edu.ifpi.jazida.writable.RestoreReplyWritable;
 import br.edu.ifpi.jazida.writable.UpdateReplyWritable;
 import br.edu.ifpi.opala.utils.Path;
-import br.edu.ifpi.opala.utils.ReturnMessage;
 
 public class SupportReplyImage {
 	
 	private static final Logger LOG = Logger.getLogger(SupportReplyImage.class);
 	private final String IP_LOCAL = DataNodeConf.DATANODE_HOSTADDRESS;
 	private final int PORTA = DataNodeConf.IMAGE_REPLICATION_SUPPORT_SERVER_PORT;
+	private final String HOSTNAME = DataNodeConf.DATANODE_HOSTNAME;
 	private final String PATH_INDEX = Path.IMAGE_BACKUP.getValue();
 	private final String PATH_REPLY = PathJazida.IMAGE_INDEX_REPLY.getValue();
 	private Configuration HADOOP_CONFIGURATION = new Configuration();
@@ -51,11 +51,11 @@ public class SupportReplyImage {
 	public SupportReplyImage(){
 	}		
 		
-	private ISupportIndexImageProtocol getSupportIndexImageProtocol(final InetSocketAddress address) {
+	private ISupportReplyImageProtocol getSupportIndexImageProtocol(final InetSocketAddress address) {
 		try{
-			ISupportIndexImageProtocol proxy = (ISupportIndexImageProtocol) RPC.getProxy(
-												ISupportIndexImageProtocol.class,
-												ISupportIndexImageProtocol.versionID,
+			ISupportReplyImageProtocol proxy = (ISupportReplyImageProtocol) RPC.getProxy(
+												ISupportReplyImageProtocol.class,
+												ISupportReplyImageProtocol.versionID,
 													address, HADOOP_CONFIGURATION);
 			return proxy;
 		}catch(IOException e){
@@ -77,7 +77,7 @@ public class SupportReplyImage {
 		}		
 		
 		try{
-			ISupportIndexImageProtocol supportProxy = getSupportIndexImageProtocol(new InetSocketAddress(ipRemote, PORTA));
+			ISupportReplyImageProtocol supportProxy = getSupportIndexImageProtocol(new InetSocketAddress(ipRemote, PORTA));
 			supportProxy.loadData(fileNames, new Text(IP_LOCAL), new Text(hostNameLocal));
 		}catch (Throwable e){
 			LOG.error("Falha no metodo: startUpdateIndexReply()");
@@ -89,10 +89,9 @@ public class SupportReplyImage {
 	public void updateIndexReply(String[] fileNames, String ipRemote, String hostName, String hostNameRemote) throws IOException {
 		try{
 			UpdateReplyWritable update = new UpdateReplyWritable(fileNames, hostName, PATH_INDEX, PATH_REPLY);
-			ISupportIndexImageProtocol supportProxy = getSupportIndexImageProtocol(new InetSocketAddress(ipRemote, PORTA));
+			ISupportReplyImageProtocol supportProxy = getSupportIndexImageProtocol(new InetSocketAddress(ipRemote, PORTA));
 		
-			IntWritable result = supportProxy.finishUpdate(update);
-			LOG.info("A atualização da réplica no "+ hostNameRemote + " retornou: " +ReturnMessage.getReturnMessage(result.get()));
+			supportProxy.finishUpdate(update);
 		}catch (Throwable e){
 			LOG.error("Falha no metodo: updateIndexReply()");
 			LOG.error(e.fillInStackTrace(), e);
@@ -101,7 +100,7 @@ public class SupportReplyImage {
 	
 	public void startRestoreIndexReply(String ipRemote, String hostNameLocal) throws IOException {
 		try{
-			ISupportIndexImageProtocol supportProxy = getSupportIndexImageProtocol(new InetSocketAddress(ipRemote, PORTA));
+			ISupportReplyImageProtocol supportProxy = getSupportIndexImageProtocol(new InetSocketAddress(ipRemote, PORTA));
 			supportProxy.restoreIndexReply(new Text(IP_LOCAL), new Text(hostNameLocal));
 		}catch (Throwable e){
 			LOG.error("Falha no metodo: startRestoreIndexReply()");
@@ -113,10 +112,9 @@ public class SupportReplyImage {
 	public void restoreIndexReply(Directory dir, String ipRemote, String hostName, String hostNameRemote) throws IOException {
 		try{
 			RestoreReplyWritable restore = new RestoreReplyWritable(dir, hostName, PATH_REPLY);
-			ISupportIndexImageProtocol supportProxy = getSupportIndexImageProtocol(new InetSocketAddress(ipRemote, PORTA));
+			ISupportReplyImageProtocol supportProxy = getSupportIndexImageProtocol(new InetSocketAddress(ipRemote, PORTA));
 		
-			IntWritable result = supportProxy.finishRestore(restore);
-			LOG.info("A restauração da réplica no "+ hostNameRemote + " retornou: " +ReturnMessage.getReturnMessage(result.get()));
+			supportProxy.finishRestore(restore);
 		}catch (Throwable e){
 			LOG.error("Falha no metodo: restoreIndexReply()");
 			LOG.error(e.fillInStackTrace(), e);
@@ -126,15 +124,15 @@ public class SupportReplyImage {
 	public void checkRepliesImage(List<NodeStatus> nodesReplyReceive) {
 		LOG.info("Verificando atualização das réplicas de imagem...");
 		try{
-			final Map<String, ISupportIndexImageProtocol> supportProxy = new HashMap<String, ISupportIndexImageProtocol>();
+			final Map<String, ISupportReplyImageProtocol> supportProxy = new HashMap<String, ISupportReplyImageProtocol>();
 			ExecutorService threadPool  = Executors.newCachedThreadPool();
 			
 			for (NodeStatus node : nodesReplyReceive) {
 				final InetSocketAddress socketAdress = new InetSocketAddress(node.getAddress(), PORTA);
-				ISupportIndexImageProtocol supportIndexImageProtocol = getSupportIndexImageProtocol(socketAdress);
+				ISupportReplyImageProtocol supportReplyImageProtocol = getSupportIndexImageProtocol(socketAdress);
 				
-				if(supportIndexImageProtocol != null){
-					supportProxy.put(node.getHostname(), supportIndexImageProtocol);	
+				if(supportReplyImageProtocol != null){
+					supportProxy.put(node.getHostname(), supportReplyImageProtocol);	
 				}
 			}
 			
@@ -147,16 +145,17 @@ public class SupportReplyImage {
 							int numDocs = reader.numDocs();
 							reader.close();
 							
-							ISupportIndexImageProtocol proxy = supportProxy.get(nodeStatus.getHostname());
+							ISupportReplyImageProtocol proxy = supportProxy.get(nodeStatus.getHostname());
 							return proxy.checkIndexImage(new IntWritable(numDocs));
 						}
 					});
 					
 					IntWritable returnCode = request.get(3500, TimeUnit.MILLISECONDS);
 					if(ReturneMessageJazida.getReturnMessage(returnCode.get()) == ReturneMessageJazida.REPLY_OUTDATED){
-						LOG.info("Atualizando réplica de imagem do "+ nodeStatus.getHostname() + ".");
-						new SupportReplyImage().startUpdateIndexReply(nodeStatus.getAddress(), getDiretory(nodeStatus.getHostname()),
-								DataNodeConf.DATANODE_HOSTNAME);
+						LOG.info("Atualizando réplica de imagem do "+ nodeStatus.getHostname() + "...");
+						new SupportReplyImage().startUpdateIndexReply(nodeStatus.getAddress(), 
+																	getDiretory(nodeStatus.getHostname()), HOSTNAME);
+						
 					}else if(ReturneMessageJazida.getReturnMessage(returnCode.get()) == ReturneMessageJazida.REPLY_UPDATED){
 						LOG.info("Réplica de imagem do "+ nodeStatus.getHostname() + " atualizada.");
 					}			
@@ -164,8 +163,8 @@ public class SupportReplyImage {
 				} else {
 					String pathDir = PathJazida.IMAGE_INDEX_REPLY.getValue();
 					createIndexIfNotExists(new File(pathDir + "/" + nodeStatus.getHostname()));
-					LOG.info("Restaurando réplica de imagem do "+ nodeStatus.getHostname() + ".");
-					new SupportReplyImage().startRestoreIndexReply(nodeStatus.getAddress(), DataNodeConf.DATANODE_HOSTNAME);
+					LOG.info("Restaurando réplica de imagem do "+ nodeStatus.getHostname() + "...");
+					new SupportReplyImage().startRestoreIndexReply(nodeStatus.getAddress(), HOSTNAME);
 				}
 			}
 			
@@ -201,5 +200,5 @@ public class SupportReplyImage {
 		indexWriter.close();
 	}
 
-	
+		
 }

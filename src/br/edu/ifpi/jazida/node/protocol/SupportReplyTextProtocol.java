@@ -16,11 +16,10 @@ import br.edu.ifpi.jazida.util.ReturneMessageJazida;
 import br.edu.ifpi.jazida.writable.RestoreReplyWritable;
 import br.edu.ifpi.jazida.writable.UpdateReplyWritable;
 import br.edu.ifpi.opala.utils.Path;
-import br.edu.ifpi.opala.utils.ReturnMessage;
 
-public class SupportIndexTextProtocol implements ISupportIndexTextProtocol {
+public class SupportReplyTextProtocol implements ISupportReplyTextProtocol {
 	
-	private static final Logger LOG = Logger.getLogger(SupportIndexTextProtocol.class);
+	private static final Logger LOG = Logger.getLogger(SupportReplyTextProtocol.class);
 	private String HOSTNAME = DataNodeConf.DATANODE_HOSTNAME;
 	
 	@Override
@@ -44,10 +43,7 @@ public class SupportIndexTextProtocol implements ISupportIndexTextProtocol {
 	@Override
 	public void updateIndexReply(String[] arrayFileNames, String ipRemote, String hostName, String hostNameRemote) {
 		try {
-			
-			LOG.info("Atualizando réplica de texto no " + hostNameRemote + " ...");
 			new SupportReplyText().updateIndexReply(arrayFileNames, ipRemote, hostName, hostNameRemote);
-
 		} catch (IOException e) {
 			LOG.error("Falha no metodo: updateIndexReply() Protocol");
 			LOG.error(e.fillInStackTrace(), e);
@@ -55,17 +51,15 @@ public class SupportIndexTextProtocol implements ISupportIndexTextProtocol {
 	}
 	
 	@Override
-	public IntWritable finishUpdate(UpdateReplyWritable update) {
+	public void finishUpdate(UpdateReplyWritable update) {
 		String hostName = update.getHostName();
-		LOG.info("Atualização da réplica do " + hostName + " finalizada.");
-		return new IntWritable(ReturnMessage.SUCCESS.code);
+		LOG.info("A atualização da réplica de texto do " + hostName+ " foi finalizada.");
 	}
 
 	@Override
 	public void restoreIndexReply(Text ipRemote, Text hostNameRemote) {
 		Directory directory;
 		try {
-			LOG.info("Restaurando réplica de texto no " + hostNameRemote + " ...");			
 			directory = FSDirectory.open(new File(Path.TEXT_BACKUP.getValue()));
 			new SupportReplyText().restoreIndexReply(directory, ipRemote.toString(), HOSTNAME.toString(), hostNameRemote.toString());
 
@@ -77,16 +71,15 @@ public class SupportIndexTextProtocol implements ISupportIndexTextProtocol {
 	}
 	
 	@Override
-	public IntWritable finishRestore(RestoreReplyWritable restore) {
+	public void finishRestore(RestoreReplyWritable restore) {
 		String hostName = restore.getHostName();
-		LOG.info("Restautaração da réplica de texto do " + hostName + " finalizada.");
-		return new IntWritable(ReturnMessage.SUCCESS.code);
+		LOG.info("A restauração da réplica de texto do " + hostName+ " foi finalizada.");
 	}
 
 	@Override
 	public IntWritable checkIndexText(IntWritable numDocsReply) {
 		try{
-		Directory dir = getDiretory(HOSTNAME);
+		Directory dir = getDiretory();
 		IndexReader reader = IndexReader.open(dir);
 		if (numDocsReply.get() != reader.numDocs()){
 			reader.close();
@@ -104,10 +97,9 @@ public class SupportIndexTextProtocol implements ISupportIndexTextProtocol {
 		return null;
 	}
 	
-	private Directory getDiretory(String hostName) throws IOException {
+	private Directory getDiretory() throws IOException {
 		String pathDir = Path.TEXT_INDEX.getValue();
 		Directory dir = FSDirectory.open(new File(pathDir));
 		return dir;
 	}
-
 }

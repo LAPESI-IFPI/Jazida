@@ -30,14 +30,13 @@ import org.apache.lucene.store.LockObtainFailedException;
 import org.apache.lucene.util.Version;
 
 import br.edu.ifpi.jazida.node.NodeStatus;
-import br.edu.ifpi.jazida.node.protocol.ISupportIndexTextProtocol;
+import br.edu.ifpi.jazida.node.protocol.ISupportReplyTextProtocol;
 import br.edu.ifpi.jazida.util.DataNodeConf;
 import br.edu.ifpi.jazida.util.PathJazida;
 import br.edu.ifpi.jazida.util.ReturneMessageJazida;
 import br.edu.ifpi.jazida.writable.RestoreReplyWritable;
 import br.edu.ifpi.jazida.writable.UpdateReplyWritable;
 import br.edu.ifpi.opala.utils.Path;
-import br.edu.ifpi.opala.utils.ReturnMessage;
 
 public class SupportReplyText {
 	
@@ -51,11 +50,11 @@ public class SupportReplyText {
 	public SupportReplyText(){
 	}		
 		
-	private ISupportIndexTextProtocol getSupportIndexTextServer(final InetSocketAddress address) {
+	private ISupportReplyTextProtocol getSupportIndexTextServer(final InetSocketAddress address) {
 		try{
-			ISupportIndexTextProtocol proxy = (ISupportIndexTextProtocol) RPC.getProxy(
-													ISupportIndexTextProtocol.class,
-													ISupportIndexTextProtocol.versionID,
+			ISupportReplyTextProtocol proxy = (ISupportReplyTextProtocol) RPC.getProxy(
+													ISupportReplyTextProtocol.class,
+													ISupportReplyTextProtocol.versionID,
 													address, HADOOP_CONFIGURATION);
 			return proxy;
 		}catch(IOException e){
@@ -77,7 +76,7 @@ public class SupportReplyText {
 		}		
 		
 		try{
-			ISupportIndexTextProtocol supportProxy = getSupportIndexTextServer(new InetSocketAddress(ipRemote, PORTA));
+			ISupportReplyTextProtocol supportProxy = getSupportIndexTextServer(new InetSocketAddress(ipRemote, PORTA));
 			supportProxy.loadData(fileNames, new Text(IP_LOCAL), new Text(hostNameLocal));
 		}catch (Throwable e){
 			LOG.error("Falha no metodo: startUpdateIndexReply()");
@@ -89,10 +88,9 @@ public class SupportReplyText {
 	public void updateIndexReply(String[] fileNames, String ipRemote, String hostName, String hostNameRemote) throws IOException {
 		try{
 			UpdateReplyWritable update = new UpdateReplyWritable(fileNames, hostName, PATH_INDEX, PATH_REPLY);
-			ISupportIndexTextProtocol supportProxy = getSupportIndexTextServer(new InetSocketAddress(ipRemote, PORTA));
+			ISupportReplyTextProtocol supportProxy = getSupportIndexTextServer(new InetSocketAddress(ipRemote, PORTA));
 			
-			IntWritable result = supportProxy.finishUpdate(update);
-			LOG.info("A atualização da réplica no "+ hostNameRemote + " retornou: " +ReturnMessage.getReturnMessage(result.get()));
+			supportProxy.finishUpdate(update);
 		}catch (Throwable e){
 			LOG.error("Falha no metodo: updateIndexReply()");
 			LOG.error(e.fillInStackTrace(), e);
@@ -101,22 +99,20 @@ public class SupportReplyText {
 	
 	public void startRestoreIndexReply(String ipRemote, String hostNameLocal) throws IOException {
 		try{
-			ISupportIndexTextProtocol supportProxy = getSupportIndexTextServer(new InetSocketAddress(ipRemote, PORTA));
+			ISupportReplyTextProtocol supportProxy = getSupportIndexTextServer(new InetSocketAddress(ipRemote, PORTA));
 			supportProxy.restoreIndexReply(new Text(IP_LOCAL), new Text(hostNameLocal));
 		}catch (Throwable e){
 			LOG.error("Falha no metodo: startRestoreIndexReply()");
 			LOG.error(e.fillInStackTrace(), e);
 		}
-	}
-	
+	}	
 	
 	public void restoreIndexReply(Directory dir, String ipRemote, String hostName, String hostNameRemote) throws IOException {
 		try{
 			RestoreReplyWritable restore = new RestoreReplyWritable(dir, hostName, PATH_REPLY);
-			ISupportIndexTextProtocol supportProxy = getSupportIndexTextServer(new InetSocketAddress(ipRemote, PORTA));
+			ISupportReplyTextProtocol supportProxy = getSupportIndexTextServer(new InetSocketAddress(ipRemote, PORTA));
 		
-			IntWritable result = supportProxy.finishRestore(restore);
-			LOG.info("A restauração da réplica no "+ hostNameRemote + " retornou: " +ReturnMessage.getReturnMessage(result.get()));
+			supportProxy.finishRestore(restore);
 		}catch (Throwable e){
 			LOG.error("Falha no metodo: restoreIndexReply()");
 			LOG.error(e.fillInStackTrace(), e);
@@ -126,15 +122,15 @@ public class SupportReplyText {
 	public void checkRepliesText(List<NodeStatus> nodesReplyReceive){
 		LOG.info("Verificando atualização das réplicas de texto...");
 		try{
-			final Map<String, ISupportIndexTextProtocol> supportProxy = new HashMap<String, ISupportIndexTextProtocol>();
+			final Map<String, ISupportReplyTextProtocol> supportProxy = new HashMap<String, ISupportReplyTextProtocol>();
 			ExecutorService threadPool  = Executors.newCachedThreadPool();
 			
 			for (NodeStatus node : nodesReplyReceive) {
 				final InetSocketAddress socketAdress = new InetSocketAddress(node.getAddress(), PORTA);
-				ISupportIndexTextProtocol supportIndexTextProtocol = getSupportIndexTextServer(socketAdress);
+				ISupportReplyTextProtocol supportReplyTextProtocol = getSupportIndexTextServer(socketAdress);
 				
-				if(supportIndexTextProtocol != null){
-					supportProxy.put(node.getHostname(), supportIndexTextProtocol);	
+				if(supportReplyTextProtocol != null){
+					supportProxy.put(node.getHostname(), supportReplyTextProtocol);	
 				}
 			}
 			
@@ -147,7 +143,7 @@ public class SupportReplyText {
 							int numDocs = reader.numDocs();
 							reader.close();
 							
-							ISupportIndexTextProtocol proxy = supportProxy.get(nodeStatus.getHostname());
+							ISupportReplyTextProtocol proxy = supportProxy.get(nodeStatus.getHostname());
 							return proxy.checkIndexText(new IntWritable(numDocs));
 						}
 					});
@@ -183,7 +179,6 @@ public class SupportReplyText {
 			}	
 	}
 	
-	
 	private Directory getDiretory(String hostName) throws IOException {
 		String pathDir = PathJazida.TEXT_INDEX_REPLY.getValue();
 		Directory dir = null;
@@ -202,4 +197,5 @@ public class SupportReplyText {
 													IndexWriter.MaxFieldLength.UNLIMITED);
 		indexWriter.close();
 	}
+
 }

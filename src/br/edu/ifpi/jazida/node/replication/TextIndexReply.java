@@ -46,36 +46,36 @@ public class TextIndexReply {
 	}
 	
 	public synchronized ReturnMessage addTextReply(MetaDocument metaDocument, String content,
-			String hostname, String IP, long numDocsIndex) throws IOException {
+			String hostName, String IP, long numDocsIndex) throws IOException {
 		metaDocument.getDocument().add(
 				new Field(Metadata.CONTENT.getValue(), content,
 						Field.Store.YES, Field.Index.ANALYZED));
 		
 		try {		
 			
-			IndexWriter writer = getIndexWriter(hostname);
+			IndexWriter writer = getIndexWriter(hostName);
 			writer.addDocument(metaDocument.getDocument());
 			System.out.println("add reply");
 			long numDocsReply = writer.numDocs();			
 			writer.close();			
 		
-			if (numDocsIndex > numDocsReply){
-				LOG.info("Atualizando réplica de texto do "+ hostname + "...");
-				//getDiretory(hostname).deleteFile("0_.cfs");
-				new SupportReplyText().startUpdateIndexReply(IP, getDiretory(hostname), HOSTNAME_LOCAL);
+			if (numDocsIndex != numDocsReply){
+				LOG.info("Atualizando réplica de texto do "+ hostName + "...");
+				//getDiretory(hostName).deleteFile("0_.cfs");
+				new SupportReplyText().startUpdateIndexReply(IP, getDiretory(hostName), HOSTNAME_LOCAL);
 				System.out.println("replica atualizada: metodo 1");
 				return ReturnMessage.OUTDATED;
 			}
 			
 			
 		} catch (CorruptIndexException e) {
-			LOG.info("Restaurando réplica de texto do "+ hostname + "...");
-			Util.deleteDir(new File(pathDir+"/"+hostname));
+			LOG.info("Restaurando réplica de texto do "+ hostName + "...");
+			Util.deleteDir(new File(pathDir+"/"+hostName));
 			new SupportReplyText().startRestoreIndexReply(IP, HOSTNAME_LOCAL);
 			return ReturnMessage.UNEXPECTED_INDEX_ERROR;
 		} catch (IOException e) {
-			LOG.info("Restaurando réplica de texto do "+ hostname + "...");
-			Util.deleteDir(new File(pathDir+"/"+hostname));
+			LOG.info("Restaurando réplica de texto do "+ hostName + "...");
+			Util.deleteDir(new File(pathDir+"/"+hostName));
 			new SupportReplyText().startRestoreIndexReply(IP, HOSTNAME_LOCAL);
 			return ReturnMessage.UNEXPECTED_INDEX_ERROR;
 		}
@@ -83,32 +83,32 @@ public class TextIndexReply {
 		return ReturnMessage.SUCCESS;
 	}
 
-	public synchronized ReturnMessage delTextReply(String id, String hostname, String IP) throws IOException {
+	public synchronized ReturnMessage delTextReply(String id, String hostName, String IP) throws IOException {
 		
 		try {
-			IndexWriter writer = getIndexWriter(hostname);
+			IndexWriter writer = getIndexWriter(hostName);
 			writer.deleteDocuments(new Term(Metadata.ID.getValue(), id));
 			System.out.println("Deletou reply");
 			writer.optimize();
 			writer.close();			
 			return ReturnMessage.SUCCESS;
 		} catch (CorruptIndexException e) {
-			LOG.info("Restaurando réplica de texto do "+ hostname + "...");
-			Util.deleteDir(new File(pathDir+"/"+hostname));
+			LOG.info("Restaurando réplica de texto do "+ hostName + "...");
+			Util.deleteDir(new File(pathDir+"/"+hostName));
 			new SupportReplyText().startRestoreIndexReply(IP, HOSTNAME_LOCAL);
 			return ReturnMessage.UNEXPECTED_INDEX_ERROR;
 		} catch (IOException e) {
-			LOG.info("Restaurando réplica de texto do "+ hostname + "...");
-			Util.deleteDir(new File(pathDir+"/"+hostname));
+			LOG.info("Restaurando réplica de texto do "+ hostName + "...");
+			Util.deleteDir(new File(pathDir+"/"+hostName));
 			new SupportReplyText().startRestoreIndexReply(IP, HOSTNAME_LOCAL);
 			return ReturnMessage.UNEXPECTED_INDEX_ERROR;
 		}
 	}
 	
-	public synchronized ReturnMessage updateTextReply(String id, Map<String, String> updates, String hostname, String IP) throws IOException {
+	public synchronized ReturnMessage updateTextReply(String id, Map<String, String> updates, String hostName, String IP) throws IOException {
 		Term term = new Term(Metadata.ID.getValue(), id);
 		try {
-			Document doc = getDocumentByIdentifier(id, hostname);
+			Document doc = getDocumentByIdentifier(id, hostName);
 			if (doc == null) {
 				return ReturnMessage.ID_NOT_FOUND;
 			}
@@ -119,7 +119,7 @@ public class TextIndexReply {
 						Field.Store.YES, Field.Index.ANALYZED));
 			}
 
-			IndexWriter writer = getIndexWriter(hostname);
+			IndexWriter writer = getIndexWriter(hostName);
 			writer.updateDocument(term, doc);
 			writer.optimize();
 			System.out.println("Atualizou reply");
@@ -127,33 +127,33 @@ public class TextIndexReply {
 			return ReturnMessage.SUCCESS;
 			
 		} catch (CorruptIndexException e) {
-			LOG.info("Restaurando réplica de texto do "+ hostname + "...");
-			Util.deleteDir(new File(pathDir+"/"+hostname));
+			LOG.info("Restaurando réplica de texto do "+ hostName + "...");
+			Util.deleteDir(new File(pathDir+"/"+hostName));
 			new SupportReplyText().startRestoreIndexReply(IP, HOSTNAME_LOCAL);
 			return ReturnMessage.UNEXPECTED_INDEX_ERROR;
 		} catch (IOException e) {
-			LOG.info("Restaurando réplica de texto do "+ hostname + "...");
-			Util.deleteDir(new File(pathDir+"/"+hostname));
+			LOG.info("Restaurando réplica de texto do "+ hostName + "...");
+			Util.deleteDir(new File(pathDir+"/"+hostName));
 			new SupportReplyText().startRestoreIndexReply(IP, HOSTNAME_LOCAL);
 			return ReturnMessage.UNEXPECTED_INDEX_ERROR;
 		}
 		
 	}
 	
-	private IndexWriter getIndexWriter(String hostname) throws CorruptIndexException, LockObtainFailedException, IOException{
-		return new IndexWriter(getDiretory(hostname), ANALYZER,	MaxFieldLength.UNLIMITED);
+	private IndexWriter getIndexWriter(String hostName) throws CorruptIndexException, LockObtainFailedException, IOException{
+		return new IndexWriter(getDiretory(hostName), ANALYZER,	MaxFieldLength.UNLIMITED);
 	}
 
-	private Directory getDiretory(String hostname) throws IOException {
-		Directory dir = FSDirectory.open(new File(pathDir + "/" + hostname));
+	private Directory getDiretory(String hostName) throws IOException {
+		Directory dir = FSDirectory.open(new File(pathDir + "/" + hostName));
 		return dir;
 	}
 	
-	private Document getDocumentByIdentifier(String id, String hostname) throws IOException {
+	private Document getDocumentByIdentifier(String id, String hostName) throws IOException {
 		IndexReader indexReader = null;
 		Directory dir = null;
 		try {
-			dir = getDiretory(hostname);
+			dir = getDiretory(hostName);
 			indexReader = IndexReader.open(dir, false);
 			
 			Term term = new Term(Metadata.ID.getValue(), id);
@@ -164,13 +164,14 @@ public class TextIndexReply {
 					return indexReader.document(docUID);
 				}
 			}
+		
+			indexReader.close();
 			
 		} catch (CorruptIndexException e) {
-			LOG.error(e.fillInStackTrace(), e);
+			return null;
 		} catch (IOException e) {
-			LOG.error(e.fillInStackTrace(), e);
+			return null;
 		}
-		indexReader.close();
 		return null;
 	}
 }

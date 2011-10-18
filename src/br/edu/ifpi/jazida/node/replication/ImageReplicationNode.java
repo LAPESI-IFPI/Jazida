@@ -107,10 +107,10 @@ public class ImageReplicationNode {
 				for (Future<IntWritable> future : requests) {
 					IntWritable returnCode = future.get();
 					if(ReturnMessage.getReturnMessage(returnCode.get()) == ReturnMessage.UNEXPECTED_INDEX_ERROR){
-						LOG.info("Uma réplica precisou ser restaurada.");
+						LOG.info("Uma réplica  de imagem precisou ser restaurada.");
 					}
 					if(ReturnMessage.getReturnMessage(returnCode.get()) == ReturnMessage.OUTDATED){
-						LOG.info("Uma réplica precisou ser atualizada.");
+						LOG.info("Uma réplica de imagem precisou ser atualizada.");
 					}
 				}		
 			}
@@ -148,7 +148,7 @@ public class ImageReplicationNode {
 				for (Future<IntWritable> future : requests) {
 					IntWritable returnCode = future.get(3000, TimeUnit.MILLISECONDS);
 					if(ReturnMessage.getReturnMessage(returnCode.get()) == ReturnMessage.UNEXPECTED_INDEX_ERROR){
-						LOG.info("Uma réplica precisou ser restaurada.");
+						LOG.info("Uma réplica de imagem precisou ser restaurada.");
 					}
 				}				
 			}
@@ -187,7 +187,7 @@ public class ImageReplicationNode {
 				for (Future<IntWritable> future : requests) {
 					IntWritable returnCode = future.get(3000, TimeUnit.MILLISECONDS);
 					if(ReturnMessage.getReturnMessage(returnCode.get()) == ReturnMessage.UNEXPECTED_INDEX_ERROR){
-						LOG.info("Uma réplica precisou ser restaurada.");
+						LOG.info("Uma réplica de imagem precisou ser restaurada.");
 					}
 				}		
 			}

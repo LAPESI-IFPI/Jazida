@@ -3,6 +3,7 @@ package br.edu.ifpi.jazida.client;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,7 @@ import java.util.Map;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.ipc.RPC;
+import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.br.BrazilianAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.FieldSelector;
@@ -52,6 +54,7 @@ import br.edu.ifpi.opala.utils.ReturnMessage;
 public class TextSearcherClient implements TextSearcher {
 	
 	private static final BrazilianAnalyzer ANALYZER = new BrazilianAnalyzer(Version.LUCENE_30);
+	private static final Logger LOG = Logger.getLogger(TextSearcherClient.class);
 	private static final Configuration HADOOP_CONF = new Configuration();
 	private ParallelMultiSearcher searcher;
 	private List<NodeStatus> datanodes;
@@ -59,24 +62,28 @@ public class TextSearcherClient implements TextSearcher {
 	
 	public TextSearcherClient() 
 	throws IOException, KeeperException, InterruptedException {
-		this.datanodes = ListsManager.getDatanodes();
-
-		if (datanodes.size()==0) {
-			throw new NoNodesAvailableException("Nenhum DataNode conectado ao ClusterService.");
+		try{
+			this.datanodes = ListsManager.getDatanodes();
+	
+			if (datanodes.size()==0) {
+				throw new NoNodesAvailableException("Nenhum DataNode conectado ao ClusterService.");
+			}
+			Searchable[] searchables = new RemoteSearchableAdapter[datanodes.size()];
+			int i=0;
+			for (NodeStatus node : datanodes) {
+				final InetSocketAddress hostAdress = new InetSocketAddress(
+								node.getAddress(),
+								node.getTextSearchServerPort());
+				ITextSearchableProtocol searchableClient = getSearchableProxy(hostAdress);
+				proxyMap.put(node.getHostname(), searchableClient);
+				searchables[i] = new RemoteSearchableAdapter(searchableClient);
+				i++;
+			}
+			
+			searcher = new ParallelMultiSearcher(searchables);
+		} catch (ConcurrentModificationException e) {
+			LOG.info("Reordenando listas");
 		}
-		Searchable[] searchables = new RemoteSearchableAdapter[datanodes.size()];
-		int i=0;
-		for (NodeStatus node : datanodes) {
-			final InetSocketAddress hostAdress = new InetSocketAddress(
-							node.getAddress(),
-							node.getTextSearchServerPort());
-			ITextSearchableProtocol searchableClient = getSearchableProxy(hostAdress);
-			proxyMap.put(node.getHostname(), searchableClient);
-			searchables[i] = new RemoteSearchableAdapter(searchableClient);
-			i++;
-		}
-		
-		searcher = new ParallelMultiSearcher(searchables);
 	}
 	
 	private ITextSearchableProtocol getSearchableProxy(

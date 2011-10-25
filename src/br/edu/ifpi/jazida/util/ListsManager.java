@@ -230,8 +230,10 @@ public class ListsManager {
 			
 			List<String> datanodesReceive = getListDatanodesReceiveReply(hostNameDesc);
 			if(datanodesReceive.contains(HOSTNAME)){
-				new SupportReplyText().checkRepliesText(datanodesReplyReceive);
-				new SupportReplyImage().checkRepliesImage(datanodesReplyReceive);
+				if(datanodesConnected.size() > 1){
+					new SupportReplyText().checkRepliesText(datanodesReplyReceive);
+					new SupportReplyImage().checkRepliesImage(datanodesReplyReceive);
+				}
 			}
 			
 		} catch (InterruptedException e) {
@@ -319,11 +321,8 @@ public class ListsManager {
 					zk.setData(ZkConf.DATANODES_DESCONNECTED, Serializer.fromObject((Serializable) datanodesDesconnected), -1);					
 					zk.setData(ZkConf.HISTORIC_SEND, Serializer.fromObject((Serializable) historicSendDatanodesDesconnected), -1);
 					
-					//Thread.sleep(2000);
-					if(hostName.equals(HOSTNAME)){
-						new SupportReplyText().checkRepliesText(datanodesReplyReceive);
-						new SupportReplyImage().checkRepliesImage(datanodesReplyReceive);
-					}
+					new SupportReplyText().checkRepliesText(datanodesReplyReceive);
+					new SupportReplyImage().checkRepliesImage(datanodesReplyReceive);
 				} 	
 				
 				clear();

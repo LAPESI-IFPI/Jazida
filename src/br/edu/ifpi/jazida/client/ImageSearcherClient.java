@@ -74,26 +74,29 @@ public class ImageSearcherClient implements SearcherImage {
 	private ExecutorService threadPool;
 
 	public ImageSearcherClient() throws IOException, KeeperException, InterruptedException {
-		LOG.info("Inicializando ImageSearchClient");
-		this.datanodes = ListsManager.getDatanodes();
-
-		if (datanodes.size()==0) {
-			throw new NoNodesAvailableException("Nenhum DataNode conectado ao ClusterService.");
+		try{
+			this.datanodes = ListsManager.getDatanodes();
+	
+			if (datanodes.size()==0) {
+				throw new NoNodesAvailableException("Nenhum DataNode conectado ao ClusterService.");
+			}
+			Searchable[] searchables = new RemoteSearchableAdapter[datanodes.size()];
+			int i=0;
+			for (NodeStatus node : datanodes) {
+				final InetSocketAddress hostAdress = new InetSocketAddress(
+								node.getAddress(),
+								node.getImageSearcherServerPort());
+				IImageSearchProtocol searchableClient = getImageSearchProtocolProxy(hostAdress);
+				proxyMap.put(node.getHostname(), searchableClient);
+				searchables[i] = new RemoteSearchableAdapter(searchableClient);
+				i++;
+			}
+			
+			searcher = new ParallelMultiSearcher(searchables);
+			threadPool = Executors.newCachedThreadPool();
+		} catch (ConcurrentModificationException e) {
+			LOG.info("Reordenando listas");
 		}
-		Searchable[] searchables = new RemoteSearchableAdapter[datanodes.size()];
-		int i=0;
-		for (NodeStatus node : datanodes) {
-			final InetSocketAddress hostAdress = new InetSocketAddress(
-							node.getAddress(),
-							node.getImageSearcherServerPort());
-			IImageSearchProtocol searchableClient = getImageSearchProtocolProxy(hostAdress);
-			proxyMap.put(node.getHostname(), searchableClient);
-			searchables[i] = new RemoteSearchableAdapter(searchableClient);
-			i++;
-		}
-		
-		searcher = new ParallelMultiSearcher(searchables);
-		threadPool = Executors.newCachedThreadPool();
 	}
 
 	private IImageSearchProtocol getImageSearchProtocolProxy(InetSocketAddress hostAdress){

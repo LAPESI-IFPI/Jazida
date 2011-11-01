@@ -436,7 +436,6 @@ public class ImageSearcherProtocol implements IImageSearchProtocol {
 				searchers[i] = new IndexSearcher(getDiretory(hostName));
 			}
 			multiSearcher = new ParallelMultiSearcher(searchers);
-			System.out.println(multiSearcher.maxDoc());
 			
 		} catch (ConcurrentModificationException e) {
 			LOG.info("Reordenando listas.");

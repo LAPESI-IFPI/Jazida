@@ -41,6 +41,7 @@ public class ImageIndexReply {
 	private static final Logger LOG = Logger.getLogger(ImageIndexReply.class);
 	private String pathDir = PathJazida.IMAGE_INDEX_REPLY.getValue();
 	private String HOSTNAME_LOCAL = DataNodeConf.DATANODE_HOSTNAME;
+	private static int cont = 0;
 	private static ImageIndexReply imageIndexReply = new ImageIndexReply();
 	
 	private ImageIndexReply() {
@@ -67,16 +68,19 @@ public class ImageIndexReply {
 		try {			
 			IndexWriter writer = getIndexWriter(hostName);			
 			writer.addDocument(metaDocument.getDocument());
-			System.out.println("add reply imagae");
 			long numDocsReply = writer.numDocs();
 			writer.close();
 			
-			if (numDocsIndex > numDocsReply){
-				LOG.info("Atualizando réplica do "+ hostName + "...");
-				new SupportReplyImage().startUpdateIndexReply(IP, getDiretory(hostName), HOSTNAME_LOCAL);
-				System.out.println("replica atualizada imagem: metodo 1");
-				return ReturnMessage.OUTDATED;
+			cont++;
+			if(cont == 5){
+				if (numDocsIndex > numDocsReply){
+					LOG.info("Atualizando réplica do "+ hostName + "...");
+					new SupportReplyImage().startUpdateIndexReply(IP, getDiretory(hostName), HOSTNAME_LOCAL);
+					return ReturnMessage.OUTDATED;
+				}
+			cont = 0;
 			}
+			
 		} catch (CorruptIndexException e) {
 			LOG.info("Restaurando réplica de imagem do "+ hostName + "...");
 			Util.deleteDir(new File(pathDir+"/"+hostName));
@@ -110,7 +114,6 @@ public class ImageIndexReply {
 					}
 				}
 			}		
-			System.out.println("del reply imagage");
 			reader.close();
 			dir.close();
 			
@@ -162,7 +165,7 @@ public class ImageIndexReply {
 				writer.addDocument(doc);
 				writer.optimize();
 				writer.close();
-				System.out.println("atualizou reply image");
+				
 				return ReturnMessage.SUCCESS;
 		} catch (CorruptIndexException e) {
 			LOG.info("Restaurando réplica de imagem do "+ hostName + "...");

@@ -42,7 +42,7 @@ public class TextReplicationNodeTest {
 				.getValue())));
 		assertTrue(FileUtilsForTest.deleteDir(new File(Path.TEXT_BACKUP
 				.getValue())));
-		//assertTrue(FileUtilsForTest.deleteDir(new File(PathJazida.TEXT_INDEX_REPLY.getValue())));
+		assertTrue(FileUtilsForTest.deleteDir(new File(PathJazida.TEXT_INDEX_REPLY.getValue())));
 		
 		datanode = new DataNode();
 		datanode.start(false);
@@ -140,8 +140,8 @@ public class TextReplicationNodeTest {
 				.title("AMERICANA_M2_TXT_FILE").author("autor04").build();
 
 	
-		textIndexerClient.addText(metaDoc2, conteudoDoArquivo(OPALA_FILE));
 		textIndexerClient.addText(metaDoc, conteudoDoArquivo(ALICE_TXT_FILE));
+		textIndexerClient.addText(metaDoc2, conteudoDoArquivo(OPALA_FILE));
 		textIndexerClient.addText(metaDoc3,	conteudoDoArquivo(AMERICA_M_TXT_FILE));
 		textIndexerClient.addText(metaDoc4,	conteudoDoArquivo(AMERICANA_M2_TXT_FILE));
 

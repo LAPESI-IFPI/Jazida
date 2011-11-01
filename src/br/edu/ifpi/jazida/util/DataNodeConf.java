@@ -48,7 +48,7 @@ public class DataNodeConf {
 			TEXT_REPLICATION_SUPPORT_SERVER_PORT = Integer.parseInt(nodeProperties.getProperty("text.replication.support.server.port"));
 			IMAGE_REPLICATION_SUPPORT_SERVER_PORT = Integer.parseInt(nodeProperties.getProperty("image.replication.support.server.port"));
 			DATANODE_HOSTNAME = nodeProperties.getProperty("datanode.hostname");
-			DATANODE_HOSTADDRESS = nodeProperties.getProperty("datanode.hostadress");
+			DATANODE_HOSTADDRESS = nodeProperties.getProperty("datanode.hostaddress");
 			
 			
 			

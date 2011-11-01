@@ -33,6 +33,7 @@ public class TextIndexReply {
 	private static final Logger LOG = Logger.getLogger(TextIndexReply.class);
 	private String pathDir = PathJazida.TEXT_INDEX_REPLY.getValue();
 	private String HOSTNAME_LOCAL = DataNodeConf.DATANODE_HOSTNAME;
+	private static int cont = 0;
 	private static TextIndexReply textIndexReply = new TextIndexReply();
 	
 	private TextIndexReply() {
@@ -55,16 +56,18 @@ public class TextIndexReply {
 			
 			IndexWriter writer = getIndexWriter(hostName);
 			writer.addDocument(metaDocument.getDocument());
-			System.out.println("add reply");
 			long numDocsReply = writer.numDocs();			
 			writer.close();			
 		
-			if (numDocsIndex != numDocsReply){
-				LOG.info("Atualizando réplica de texto do "+ hostName + "...");
-				//getDiretory(hostName).deleteFile("0_.cfs");
-				new SupportReplyText().startUpdateIndexReply(IP, getDiretory(hostName), HOSTNAME_LOCAL);
-				System.out.println("replica atualizada: metodo 1");
-				return ReturnMessage.OUTDATED;
+			cont++;
+			if(cont == 5){
+				if (numDocsIndex != numDocsReply){
+					LOG.info("Atualizando réplica de texto do "+ hostName + "...");
+					new SupportReplyText().startUpdateIndexReply(IP, getDiretory(hostName), HOSTNAME_LOCAL);
+					return ReturnMessage.OUTDATED;
+				}
+				
+			cont = 0;
 			}
 			
 			
@@ -88,7 +91,6 @@ public class TextIndexReply {
 		try {
 			IndexWriter writer = getIndexWriter(hostName);
 			writer.deleteDocuments(new Term(Metadata.ID.getValue(), id));
-			System.out.println("Deletou reply");
 			writer.optimize();
 			writer.close();			
 			return ReturnMessage.SUCCESS;
@@ -122,7 +124,6 @@ public class TextIndexReply {
 			IndexWriter writer = getIndexWriter(hostName);
 			writer.updateDocument(term, doc);
 			writer.optimize();
-			System.out.println("Atualizou reply");
 			writer.close();
 			return ReturnMessage.SUCCESS;
 			

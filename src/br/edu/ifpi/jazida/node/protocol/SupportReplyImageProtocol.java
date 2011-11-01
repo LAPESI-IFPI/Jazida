@@ -43,7 +43,6 @@ public class SupportReplyImageProtocol implements ISupportReplyImageProtocol {
 	@Override
 	public void updateIndexReply(String[] arrayFileNames, String ipRemote, String hostName, String hostNameRemote) {
 		try {
-			LOG.info("Atualizando réplica de imagem no " + hostNameRemote + " ...");			
 			new SupportReplyImage().updateIndexReply(arrayFileNames, ipRemote, hostName, hostNameRemote);
 		} catch (IOException e) {
 			LOG.error("Falha no metodo: updateIndexReply() Protocol");
@@ -73,7 +72,7 @@ public class SupportReplyImageProtocol implements ISupportReplyImageProtocol {
 	@Override
 	public void finishRestore(RestoreReplyWritable restore) {
 		String hostName = restore.getHostName();
-		LOG.info("A restauração da réplica de imagem do " + hostName+ "foi finalizada.");
+		LOG.info("A restauração da réplica de imagem do " + hostName+ " foi finalizada.");
 	}
 
 	@Override

@@ -93,7 +93,6 @@ public class TextReplicationNode {
 				ArrayList<Future<IntWritable>> requests = new ArrayList<Future<IntWritable>>();
 				LOG.info("Enviando o documento para os índices das Réplicas...");
 				for (final NodeStatus nodeStatus : datanodes) {
-						LOG.info("Enviando para: " + nodeStatus.getHostname());
 						Future<IntWritable> request = threadPool.submit(new Callable<IntWritable>() {
 							@Override
 							public IntWritable call() throws Exception {
@@ -102,6 +101,8 @@ public class TextReplicationNode {
 							}
 						});
 						requests.add(request);
+						LOG.info("Enviado para: " + nodeStatus.getHostname());
+						
 				}
 				for (Future<IntWritable> future : requests) {
 					IntWritable returnCode = future.get();
@@ -119,7 +120,7 @@ public class TextReplicationNode {
 		} catch (InterruptedException e) {
 			LOG.error(e.fillInStackTrace(), e);
 		} catch (ExecutionException e) {
-			LOG.info("Reordenando listas. exxxx");
+			LOG.info("Reordenando listas.");
 		} catch (Throwable e){
 			LOG.error(e.fillInStackTrace(), e);
 		} 
@@ -132,7 +133,6 @@ public class TextReplicationNode {
 				ArrayList<Future<IntWritable>> requests = new ArrayList<Future<IntWritable>>();
 				LOG.info("Deletando o documento nos índices das Réplicas...");
 				for (final NodeStatus nodeStatus : datanodes) {
-					LOG.info("Enviando para: " + nodeStatus.getHostname());
 					Future<IntWritable> request = threadPool.submit(new Callable<IntWritable>() {
 						@Override
 						public IntWritable call() throws Exception {
@@ -141,6 +141,7 @@ public class TextReplicationNode {
 						}
 					});
 					requests.add(request);
+					LOG.info("Deletado em: " + nodeStatus.getHostname());
 				}
 				for (Future<IntWritable> future : requests) {
 					IntWritable returnCode = future.get(3000, TimeUnit.MILLISECONDS);
@@ -171,7 +172,6 @@ public class TextReplicationNode {
 				ArrayList<Future<IntWritable>> requests = new ArrayList<Future<IntWritable>>();
 				LOG.info("Atualizando o documento nos índices das Réplicas...");
 				for (final NodeStatus nodeStatus : datanodes) {
-					LOG.info("Enviando para: " + nodeStatus.getHostname());
 					Future<IntWritable> request = threadPool.submit(new Callable<IntWritable>() {
 							@Override
 							public IntWritable call() throws Exception {
@@ -180,6 +180,8 @@ public class TextReplicationNode {
 							}
 						});
 						requests.add(request);
+						LOG.info("Atualizado em: " + nodeStatus.getHostname());
+						
 				}
 				for (Future<IntWritable> future : requests) {
 					IntWritable returnCode = future.get(3000, TimeUnit.MILLISECONDS);

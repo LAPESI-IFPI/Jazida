@@ -160,7 +160,7 @@ public class SupportReplyText {
 				} else {
 					String pathDir = PathJazida.TEXT_INDEX_REPLY.getValue();
 					createIndexIfNotExists(new File(pathDir + "/" + nodeStatus.getHostname()));
-					LOG.info("Restaurando réplica de texto do "+ nodeStatus.getHostname() + "...");
+					LOG.info("Criando réplica de texto do "+ nodeStatus.getHostname() + "...");
 					new SupportReplyText().startRestoreIndexReply(nodeStatus.getAddress(), DataNodeConf.DATANODE_HOSTNAME);
 				}
 			}

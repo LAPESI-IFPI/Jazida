@@ -53,7 +53,7 @@ public class SupportReplyImageProtocol implements ISupportReplyImageProtocol {
 	@Override
 	public void finishUpdate(UpdateReplyWritable update) {
 		String hostName = update.getHostName();
-		LOG.info("A atualização da réplica de imagem do " + hostName+ " foi finalizada.");		
+		LOG.info("Atualização da réplica de imagem do " + hostName+ " finalizada.");		
 	}
 
 	@Override
@@ -72,7 +72,7 @@ public class SupportReplyImageProtocol implements ISupportReplyImageProtocol {
 	@Override
 	public void finishRestore(RestoreReplyWritable restore) {
 		String hostName = restore.getHostName();
-		LOG.info("A restauração da réplica de imagem do " + hostName+ " foi finalizada.");
+		LOG.info("Uma nova réplica de imagem para o " + hostName+ " foi criada.");
 	}
 
 	@Override

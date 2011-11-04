@@ -73,8 +73,8 @@ public class ImageIndexReply {
 			
 			cont++;
 			if(cont == 5){
-				if (numDocsIndex > numDocsReply){
-					LOG.info("Atualizando réplica do "+ hostName + "...");
+				if (numDocsIndex != numDocsReply){
+					LOG.info("Atualizando réplica de imagem do "+ hostName + "...");
 					new SupportReplyImage().startUpdateIndexReply(IP, getDiretory(hostName), HOSTNAME_LOCAL);
 					return ReturnMessage.OUTDATED;
 				}

@@ -163,7 +163,7 @@ public class SupportReplyImage {
 				} else {
 					String pathDir = PathJazida.IMAGE_INDEX_REPLY.getValue();
 					createIndexIfNotExists(new File(pathDir + "/" + nodeStatus.getHostname()));
-					LOG.info("Restaurando réplica de imagem do "+ nodeStatus.getHostname() + "...");
+					LOG.info("Criando réplica de imagem do "+ nodeStatus.getHostname() + "...");
 					new SupportReplyImage().startRestoreIndexReply(nodeStatus.getAddress(), HOSTNAME);
 				}
 			}

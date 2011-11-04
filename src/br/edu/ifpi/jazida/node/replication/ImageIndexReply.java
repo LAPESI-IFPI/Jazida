@@ -41,7 +41,6 @@ public class ImageIndexReply {
 	private static final Logger LOG = Logger.getLogger(ImageIndexReply.class);
 	private String pathDir = PathJazida.IMAGE_INDEX_REPLY.getValue();
 	private String HOSTNAME_LOCAL = DataNodeConf.DATANODE_HOSTNAME;
-	private static int cont = 0;
 	private static ImageIndexReply imageIndexReply = new ImageIndexReply();
 	
 	private ImageIndexReply() {
@@ -71,14 +70,10 @@ public class ImageIndexReply {
 			long numDocsReply = writer.numDocs();
 			writer.close();
 			
-			cont++;
-			if(cont == 5){
-				if (numDocsIndex != numDocsReply){
-					LOG.info("Atualizando réplica de imagem do "+ hostName + "...");
-					new SupportReplyImage().startUpdateIndexReply(IP, getDiretory(hostName), HOSTNAME_LOCAL);
-					return ReturnMessage.OUTDATED;
-				}
-			cont = 0;
+			if (numDocsIndex != numDocsReply){
+				LOG.info("Atualizando réplica de imagem do "+ hostName + "...");
+				new SupportReplyImage().startUpdateIndexReply(IP, getDiretory(hostName), HOSTNAME_LOCAL);
+				return ReturnMessage.OUTDATED;
 			}
 			
 		} catch (CorruptIndexException e) {

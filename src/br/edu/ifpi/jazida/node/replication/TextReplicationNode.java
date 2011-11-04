@@ -2,7 +2,6 @@ package br.edu.ifpi.jazida.node.replication;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.List;
@@ -90,9 +89,9 @@ public class TextReplicationNode {
 		loadProxy();
 		try {
 			if (datanodes.size() > 0){
-				ArrayList<Future<IntWritable>> requests = new ArrayList<Future<IntWritable>>();
 				LOG.info("Enviando o documento para os índices das Réplicas...");
 				for (final NodeStatus nodeStatus : datanodes) {
+					LOG.info("Enviando para: " + nodeStatus.getHostname());
 						Future<IntWritable> request = threadPool.submit(new Callable<IntWritable>() {
 							@Override
 							public IntWritable call() throws Exception {
@@ -100,19 +99,16 @@ public class TextReplicationNode {
 								return proxy.addTextReply(metaDocWrapper, content, hostname, IP, numDocsIndex);
 							}
 						});
-						requests.add(request);
-						LOG.info("Enviado para: " + nodeStatus.getHostname());
 						
+						IntWritable returnCode = request.get(3500, TimeUnit.MILLISECONDS);
+						if(ReturnMessage.getReturnMessage(returnCode.get()) == ReturnMessage.SUCCESS){
+							LOG.info("Enviado com sucesso.");
+						} else if (ReturnMessage.getReturnMessage(returnCode.get()) == ReturnMessage.UNEXPECTED_INDEX_ERROR){
+							LOG.info("A réplica de texto do "+ nodeStatus.getHostname() + " precisou ser restaurada.");
+						} else if(ReturnMessage.getReturnMessage(returnCode.get()) == ReturnMessage.OUTDATED){
+							LOG.info("A réplica de texto do "+ nodeStatus.getHostname() + " precisou ser atualizada.");
+						}						
 				}
-				for (Future<IntWritable> future : requests) {
-					IntWritable returnCode = future.get();
-					if(ReturnMessage.getReturnMessage(returnCode.get()) == ReturnMessage.UNEXPECTED_INDEX_ERROR){
-						LOG.info("Uma réplica de texto precisou ser restaurada.");
-					}
-					if(ReturnMessage.getReturnMessage(returnCode.get()) == ReturnMessage.OUTDATED){
-						LOG.info("Uma réplica de texto precisou ser atualizada.");
-					}
-				}					
 			}
 			
 		} catch (ConcurrentModificationException e) {
@@ -130,9 +126,9 @@ public class TextReplicationNode {
 		loadProxy();
 		try{
 			if (datanodes.size() > 0){
-				ArrayList<Future<IntWritable>> requests = new ArrayList<Future<IntWritable>>();
 				LOG.info("Deletando o documento nos índices das Réplicas...");
 				for (final NodeStatus nodeStatus : datanodes) {
+					LOG.info("Deletando em: " + nodeStatus.getHostname());
 					Future<IntWritable> request = threadPool.submit(new Callable<IntWritable>() {
 						@Override
 						public IntWritable call() throws Exception {
@@ -140,15 +136,15 @@ public class TextReplicationNode {
 							return proxy.delTextReply(identifier, hostname, IP);
 						}
 					});
-					requests.add(request);
-					LOG.info("Deletado em: " + nodeStatus.getHostname());
-				}
-				for (Future<IntWritable> future : requests) {
-					IntWritable returnCode = future.get(3000, TimeUnit.MILLISECONDS);
-					if(ReturnMessage.getReturnMessage(returnCode.get()) == ReturnMessage.UNEXPECTED_INDEX_ERROR){
-						LOG.info("Uma réplica de texto precisou ser restaurada.");
+					
+					IntWritable returnCode = request.get(3500, TimeUnit.MILLISECONDS);
+					if(ReturnMessage.getReturnMessage(returnCode.get()) == ReturnMessage.SUCCESS){
+						LOG.info("Deletado com sucesso.");
+					} else if (ReturnMessage.getReturnMessage(returnCode.get()) == ReturnMessage.UNEXPECTED_INDEX_ERROR){
+						LOG.info("A réplica de texto do "+ nodeStatus.getHostname() + " precisou ser restaurada.");
 					}
-				}					
+				}
+								
 			}
 		
 		} catch (ConcurrentModificationException e) {
@@ -169,9 +165,9 @@ public class TextReplicationNode {
 		loadProxy();
 		try{
 			if (datanodes.size() > 0){
-				ArrayList<Future<IntWritable>> requests = new ArrayList<Future<IntWritable>>();
 				LOG.info("Atualizando o documento nos índices das Réplicas...");
 				for (final NodeStatus nodeStatus : datanodes) {
+					LOG.info("Atualizando em: " + nodeStatus.getHostname());
 					Future<IntWritable> request = threadPool.submit(new Callable<IntWritable>() {
 							@Override
 							public IntWritable call() throws Exception {
@@ -179,16 +175,15 @@ public class TextReplicationNode {
 								return proxy.updateTextReply(identifier, updatesWritable, hostname, IP);
 							}
 						});
-						requests.add(request);
-						LOG.info("Atualizado em: " + nodeStatus.getHostname());
+						
+						IntWritable returnCode = request.get(3500, TimeUnit.MILLISECONDS);
+						if(ReturnMessage.getReturnMessage(returnCode.get()) == ReturnMessage.SUCCESS){
+							LOG.info("Atualizado com sucesso.");
+						} else if (ReturnMessage.getReturnMessage(returnCode.get()) == ReturnMessage.UNEXPECTED_INDEX_ERROR){
+							LOG.info("A réplica de texto do "+ nodeStatus.getHostname() + " precisou ser restaurada.");
+						}
 						
 				}
-				for (Future<IntWritable> future : requests) {
-					IntWritable returnCode = future.get(3000, TimeUnit.MILLISECONDS);
-					if(ReturnMessage.getReturnMessage(returnCode.get()) == ReturnMessage.UNEXPECTED_INDEX_ERROR){
-						LOG.info("Uma réplica  de texto precisou ser restaurada.");
-					}
-				}		
 			}
 		
 		} catch (ConcurrentModificationException e) {

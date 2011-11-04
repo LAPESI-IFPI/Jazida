@@ -33,7 +33,6 @@ public class TextIndexReply {
 	private static final Logger LOG = Logger.getLogger(TextIndexReply.class);
 	private String pathDir = PathJazida.TEXT_INDEX_REPLY.getValue();
 	private String HOSTNAME_LOCAL = DataNodeConf.DATANODE_HOSTNAME;
-	private static int cont = 0;
 	private static TextIndexReply textIndexReply = new TextIndexReply();
 	
 	private TextIndexReply() {
@@ -59,17 +58,11 @@ public class TextIndexReply {
 			long numDocsReply = writer.numDocs();			
 			writer.close();			
 		
-			cont++;
-			if(cont == 5){
-				if (numDocsIndex != numDocsReply){
-					LOG.info("Atualizando réplica de texto do "+ hostName + "...");
-					new SupportReplyText().startUpdateIndexReply(IP, getDiretory(hostName), HOSTNAME_LOCAL);
-					return ReturnMessage.OUTDATED;
-				}
-				
-			cont = 0;
-			}
-			
+			if (numDocsIndex != numDocsReply){
+				LOG.info("Atualizando réplica de texto do "+ hostName + "...");
+				new SupportReplyText().startUpdateIndexReply(IP, getDiretory(hostName), HOSTNAME_LOCAL);
+				return ReturnMessage.OUTDATED;
+			}	
 			
 		} catch (CorruptIndexException e) {
 			LOG.info("Restaurando réplica de texto do "+ hostName + "...");
